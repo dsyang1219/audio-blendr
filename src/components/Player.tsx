@@ -38,13 +38,17 @@ export function Player() {
       const fallbackTable = preferredTable === "liked_tracks" ? "playlist_tracks" : "liked_tracks";
 
       try {
-        const result = await resolveYT({ data: { table: preferredTable, trackId: current.id } });
+        const result = await resolveYT({
+          data: { table: preferredTable, trackId: current.id, title: current.title, artist: current.artist },
+        });
         if (!cancelled && result.videoId) {
           setVideoId(result.videoId);
           return;
         }
 
-        const fallback = await resolveYT({ data: { table: fallbackTable, trackId: current.id } });
+        const fallback = await resolveYT({
+          data: { table: fallbackTable, trackId: current.id, title: current.title, artist: current.artist },
+        });
         if (!cancelled && fallback.videoId) {
           setVideoId(fallback.videoId);
           return;
@@ -53,7 +57,9 @@ export function Player() {
         if (!cancelled) toast.error(`Couldn't find "${current.title}" on YouTube`);
       } catch {
         try {
-          const fallback = await resolveYT({ data: { table: fallbackTable, trackId: current.id } });
+          const fallback = await resolveYT({
+            data: { table: fallbackTable, trackId: current.id, title: current.title, artist: current.artist },
+          });
           if (!cancelled && fallback.videoId) {
             setVideoId(fallback.videoId);
             return;

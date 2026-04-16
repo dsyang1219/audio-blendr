@@ -7,12 +7,23 @@ interface YTSearchItem {
   snippet: { title: string; channelTitle: string };
 }
 
+type TrackTable = "liked_tracks" | "playlist_tracks";
+
+type TrackLookupRow = {
+  id: string;
+  title: string;
+  artist: string;
+  youtube_video_id: string | null;
+  user_id: string;
+};
+
 async function searchYouTubeOnce(query: string): Promise<string | null> {
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) {
     console.error("[youtube] Missing YOUTUBE_API_KEY env var");
     throw new Error("YouTube not configured");
   }
+
   const url = new URL("https://www.googleapis.com/youtube/v3/search");
   url.searchParams.set("part", "snippet");
   url.searchParams.set("q", query);
@@ -27,35 +38,68 @@ async function searchYouTubeOnce(query: string): Promise<string | null> {
     console.error(`[youtube] search HTTP ${res.status} for query "${query}":`, body);
     return null;
   }
+
   const json = (await res.json()) as { items?: YTSearchItem[] };
-  const first = json.items?.find((i) => i.id?.videoId);
+  const first = json.items?.find((item) => item.id?.videoId);
   if (!first) {
     console.warn(`[youtube] No results for query: "${query}"`);
     return null;
   }
+
   console.log(`[youtube] Resolved "${query}" -> ${first.id.videoId} (${first.snippet.title})`);
   return first.id.videoId ?? null;
 }
 
-// Resolve a single track to a YouTube video id (cached in DB once found)
+async function findTrackRow(
+  table: TrackTable,
+  userId: string,
+  trackId: string,
+  title?: string,
+  artist?: string,
+): Promise<TrackLookupRow | null> {
+  const byId = await supabaseAdmin
+    .from(table)
+    .select("id, title, artist, youtube_video_id, user_id")
+    .eq("id", trackId)
+    .maybeSingle();
+
+  if (byId.data?.user_id === userId) return byId.data;
+
+  const normalizedTitle = title?.trim();
+  const normalizedArtist = artist?.trim();
+  if (!normalizedTitle || !normalizedArtist) return null;
+
+  const byMetadata = await supabaseAdmin
+    .from(table)
+    .select("id, title, artist, youtube_video_id, user_id")
+    .eq("user_id", userId)
+    .ilike("title", normalizedTitle)
+    .ilike("artist", normalizedArtist)
+    .limit(1)
+    .maybeSingle();
+
+  return byMetadata.data ?? null;
+}
+
 export const resolveYouTube = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { table: "liked_tracks" | "playlist_tracks"; trackId: string }) => d)
+  .inputValidator((d: { table: TrackTable; trackId: string; title?: string; artist?: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
-    const { data: row, error } = await supabaseAdmin
-      .from(data.table)
-      .select("id, title, artist, youtube_video_id, user_id")
-      .eq("id", data.trackId)
-      .maybeSingle();
-    if (error || !row) {
-      console.error("[youtube] Track lookup failed", { table: data.table, trackId: data.trackId, error });
+
+    const row = await findTrackRow(data.table, userId, data.trackId, data.title, data.artist);
+    if (!row) {
+      console.error("[youtube] Track lookup failed", {
+        table: data.table,
+        trackId: data.trackId,
+        title: data.title,
+        artist: data.artist,
+      });
       throw new Error("Track not found");
     }
-    if (row.user_id !== userId) throw new Error("Forbidden");
+
     if (row.youtube_video_id) return { videoId: row.youtube_video_id };
 
-    // Try a few query variants — Spotify titles often include " - Remastered", featured artists, etc.
     const cleanTitle = row.title.replace(/\s*[-(].*?(remaster|remix|version|feat\.?|ft\.?).*?[)]?$/i, "").trim();
     const queries = [
       `${row.artist} - ${cleanTitle}`,
@@ -65,15 +109,16 @@ export const resolveYouTube = createServerFn({ method: "POST" })
     ];
 
     let videoId: string | null = null;
-    for (const q of queries) {
-      videoId = await searchYouTubeOnce(q);
+    for (const query of queries) {
+      videoId = await searchYouTubeOnce(query);
       if (videoId) break;
     }
 
     if (videoId) {
-      await supabaseAdmin.from(data.table).update({ youtube_video_id: videoId }).eq("id", data.trackId);
-    } else {
-      console.error(`[youtube] Could not resolve track: "${row.artist} - ${row.title}"`);
+      await supabaseAdmin.from(data.table).update({ youtube_video_id: videoId }).eq("id", row.id);
+      return { videoId };
     }
-    return { videoId };
+
+    console.error(`[youtube] Could not resolve track: "${row.artist} - ${row.title}"`);
+    return { videoId: null };
   });
