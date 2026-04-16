@@ -182,6 +182,21 @@ export function Player() {
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
             onEnd={() => playNext()}
+            onError={(e) => {
+              // 2 = invalid id, 5 = HTML5 error, 100 = removed/private, 101/150 = embed disabled by owner
+              const code = (e as unknown as { data: number }).data;
+              const reasons: Record<number, string> = {
+                2: "Invalid video",
+                5: "Playback error",
+                100: "Video removed or private",
+                101: "Embedding disabled by uploader",
+                150: "Embedding disabled by uploader",
+              };
+              const reason = reasons[code] ?? `Error ${code}`;
+              console.error("[YouTube embed error]", code, "for", current?.title, videoId);
+              toast.error(`${current?.title}: ${reason}`);
+              setIsPlaying(false);
+            }}
           />
         )}
       </div>
