@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireServerFnAuth } from "@/utils/server-fn-auth";
 
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
@@ -43,6 +42,7 @@ export const completeSpotifyAuth = createServerFn({ method: "POST" })
   .inputValidator((d: { code: string; state: string; origin: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
+    const supabase = context.supabase;
     const stateUserId = data.state.split(".")[0];
     if (stateUserId !== userId) throw new Error("State mismatch");
 
@@ -85,7 +85,7 @@ export const completeSpotifyAuth = createServerFn({ method: "POST" })
 
     const expiresAt = new Date(Date.now() + tok.expires_in * 1000).toISOString();
 
-    const { error } = await supabaseAdmin
+    const { error } = await supabase
       .from("spotify_connections")
       .upsert(
         {
@@ -108,8 +108,13 @@ export const completeSpotifyAuth = createServerFn({ method: "POST" })
     return { success: true, displayName: me?.display_name ?? null };
   });
 
-async function refreshSpotifyToken(userId: string) {
-  const { data: conn, error } = await supabaseAdmin
+async function refreshSpotifyToken(
+  supabase: ReturnType<typeof Object>,
+  userId: string
+): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb: any = supabase;
+  const { data: conn, error } = await sb
     .from("spotify_connections")
     .select("*")
     .eq("user_id", userId)
@@ -144,7 +149,7 @@ async function refreshSpotifyToken(userId: string) {
 
   const tok = (await res.json()) as { access_token: string; expires_in: number; refresh_token?: string };
   const expiresAt = new Date(Date.now() + tok.expires_in * 1000).toISOString();
-  await supabaseAdmin
+  await sb
     .from("spotify_connections")
     .update({
       access_token: tok.access_token,
@@ -178,7 +183,7 @@ export const getSpotifyStatus = createServerFn({ method: "POST" })
   .middleware([requireServerFnAuth])
   .handler(async ({ context }) => {
     const userId = context.userId;
-    const { data } = await supabaseAdmin
+    const { data } = await context.supabase
       .from("spotify_connections")
       .select("spotify_display_name, spotify_user_id, created_at")
       .eq("user_id", userId)
@@ -190,7 +195,7 @@ export const disconnectSpotify = createServerFn({ method: "POST" })
   .middleware([requireServerFnAuth])
   .handler(async ({ context }) => {
     const userId = context.userId;
-    await supabaseAdmin.from("spotify_connections").delete().eq("user_id", userId);
+    await context.supabase.from("spotify_connections").delete().eq("user_id", userId);
     return { success: true };
   });
 
@@ -198,7 +203,8 @@ export const syncLikedSongs = createServerFn({ method: "POST" })
   .middleware([requireServerFnAuth])
   .handler(async ({ context }) => {
     const userId = context.userId;
-    const accessToken = await refreshSpotifyToken(userId);
+    const supabase = context.supabase;
+    const accessToken = await refreshSpotifyToken(supabase, userId);
 
     const tracks: ReturnType<typeof mapTrack>[] = [];
     let url: string | null = `${SPOTIFY_API}/me/tracks?limit=50`;
@@ -215,9 +221,9 @@ export const syncLikedSongs = createServerFn({ method: "POST" })
       pages++;
     }
 
-    await supabaseAdmin.from("liked_tracks").delete().eq("user_id", userId);
+    await supabase.from("liked_tracks").delete().eq("user_id", userId);
     if (tracks.length > 0) {
-      const { error } = await supabaseAdmin
+      const { error } = await supabase
         .from("liked_tracks")
         .insert(tracks.map((t) => ({ ...t, user_id: userId })));
       if (error) {
@@ -232,7 +238,8 @@ export const syncPlaylists = createServerFn({ method: "POST" })
   .middleware([requireServerFnAuth])
   .handler(async ({ context }) => {
     const userId = context.userId;
-    const accessToken = await refreshSpotifyToken(userId);
+    const supabase = context.supabase;
+    const accessToken = await refreshSpotifyToken(supabase, userId);
 
     const playlists: { id: string; name: string; description: string | null; image: string | null }[] = [];
     let plUrl: string | null = `${SPOTIFY_API}/me/playlists?limit=50`;
@@ -254,11 +261,11 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       plUrl = json.next;
     }
 
-    await supabaseAdmin.from("playlists").delete().eq("user_id", userId);
+    await supabase.from("playlists").delete().eq("user_id", userId);
 
     let totalTracks = 0;
     for (const p of playlists) {
-      const { data: pl, error: plErr } = await supabaseAdmin
+      const { data: pl, error: plErr } = await supabase
         .from("playlists")
         .insert({
           user_id: userId,
@@ -284,7 +291,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
         .filter((x): x is NonNullable<typeof x> => !!x);
 
       if (rows.length > 0) {
-        await supabaseAdmin.from("playlist_tracks").insert(rows);
+        await supabase.from("playlist_tracks").insert(rows);
         totalTracks += rows.length;
       }
     }
