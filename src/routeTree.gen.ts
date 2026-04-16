@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpotifyCallbackRouteImport } from './routes/spotify.callback'
+import { Route as ApiDebugYoutubeRouteImport } from './routes/api.debug-youtube'
 import { Route as AppPlaylistsRouteImport } from './routes/_app/playlists'
 import { Route as AppLibraryRouteImport } from './routes/_app/library'
 import { Route as AppConnectRouteImport } from './routes/_app/connect'
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
 const SpotifyCallbackRoute = SpotifyCallbackRouteImport.update({
   id: '/spotify/callback',
   path: '/spotify/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDebugYoutubeRoute = ApiDebugYoutubeRouteImport.update({
+  id: '/api/debug-youtube',
+  path: '/api/debug-youtube',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppPlaylistsRoute = AppPlaylistsRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/connect': typeof AppConnectRoute
   '/library': typeof AppLibraryRoute
   '/playlists': typeof AppPlaylistsRouteWithChildren
+  '/api/debug-youtube': typeof ApiDebugYoutubeRoute
   '/spotify/callback': typeof SpotifyCallbackRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
 }
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/connect': typeof AppConnectRoute
   '/library': typeof AppLibraryRoute
   '/playlists': typeof AppPlaylistsRouteWithChildren
+  '/api/debug-youtube': typeof ApiDebugYoutubeRoute
   '/spotify/callback': typeof SpotifyCallbackRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
 }
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/_app/connect': typeof AppConnectRoute
   '/_app/library': typeof AppLibraryRoute
   '/_app/playlists': typeof AppPlaylistsRouteWithChildren
+  '/api/debug-youtube': typeof ApiDebugYoutubeRoute
   '/spotify/callback': typeof SpotifyCallbackRoute
   '/_app/playlists/$id': typeof AppPlaylistsIdRoute
 }
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
     | '/connect'
     | '/library'
     | '/playlists'
+    | '/api/debug-youtube'
     | '/spotify/callback'
     | '/playlists/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/connect'
     | '/library'
     | '/playlists'
+    | '/api/debug-youtube'
     | '/spotify/callback'
     | '/playlists/$id'
   id:
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/_app/connect'
     | '/_app/library'
     | '/_app/playlists'
+    | '/api/debug-youtube'
     | '/spotify/callback'
     | '/_app/playlists/$id'
   fileRoutesById: FileRoutesById
@@ -122,6 +134,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiDebugYoutubeRoute: typeof ApiDebugYoutubeRoute
   SpotifyCallbackRoute: typeof SpotifyCallbackRoute
 }
 
@@ -153,6 +166,13 @@ declare module '@tanstack/react-router' {
       path: '/spotify/callback'
       fullPath: '/spotify/callback'
       preLoaderRoute: typeof SpotifyCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/debug-youtube': {
+      id: '/api/debug-youtube'
+      path: '/api/debug-youtube'
+      fullPath: '/api/debug-youtube'
+      preLoaderRoute: typeof ApiDebugYoutubeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/playlists': {
@@ -216,8 +236,18 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiDebugYoutubeRoute: ApiDebugYoutubeRoute,
   SpotifyCallbackRoute: SpotifyCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
