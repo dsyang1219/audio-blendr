@@ -9,6 +9,7 @@ export interface Track {
   youtube_video_id?: string | null;
   spotify_track_id?: string | null;
   duration_seconds?: number | null;
+  sourceTable?: "liked_tracks" | "playlist_tracks";
 }
 
 interface PlayerContextValue {
