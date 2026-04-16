@@ -45,6 +45,7 @@ function AuthPage() {
 }
 
 function SignInForm() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -52,10 +53,23 @@ function SignInForm() {
   const handle = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setBusy(false);
-    if (error) toast.error(error.message);
-    else toast.success("Welcome back!");
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success("Welcome back!");
+      navigate({ to: "/library" });
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
