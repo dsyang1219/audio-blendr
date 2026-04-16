@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getAuthUserFromRequest } from "@/utils/auth.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
@@ -18,17 +18,16 @@ function getRedirectUri(origin: string) {
   return `${origin}/spotify/callback`;
 }
 
-
 // Build the Spotify authorize URL for the current user
 export const getSpotifyAuthUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { origin: string }) => d)
-  .handler(async ({ data }) => {
-    const { userId } = await getAuthUserFromRequest();
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
     const clientId = process.env.SPOTIFY_CLIENT_ID;
     if (!clientId) throw new Error("Spotify not configured");
 
     const state = `${userId}.${crypto.randomUUID()}`;
-    // Store state briefly via signed cookie-less approach: encode userId in state
     const params = new URLSearchParams({
       client_id: clientId,
       response_type: "code",
@@ -42,9 +41,10 @@ export const getSpotifyAuthUrl = createServerFn({ method: "POST" })
 
 // Exchange code for tokens and store
 export const completeSpotifyAuth = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { code: string; state: string; origin: string }) => d)
-  .handler(async ({ data }) => {
-    const { userId } = await getAuthUserFromRequest();
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
     const stateUserId = data.state.split(".")[0];
     if (stateUserId !== userId) throw new Error("State mismatch");
 
@@ -80,7 +80,6 @@ export const completeSpotifyAuth = createServerFn({ method: "POST" })
       token_type: string;
     };
 
-    // Fetch profile
     const meRes = await fetch(`${SPOTIFY_API}/me`, {
       headers: { Authorization: `Bearer ${tok.access_token}` },
     });
@@ -119,7 +118,6 @@ async function refreshSpotifyToken(userId: string) {
     .maybeSingle();
   if (error || !conn) throw new Error("Not connected to Spotify");
 
-  // Still fresh (>60s remaining)?
   if (new Date(conn.expires_at).getTime() - Date.now() > 60_000) {
     return conn.access_token;
   }
@@ -179,119 +177,123 @@ function mapTrack(t: SpotifyTrackObj) {
 }
 
 // Get connection status
-export const getSpotifyStatus = createServerFn({ method: "POST" }).handler(async () => {
-  const { userId } = await getAuthUserFromRequest();
-  const { data } = await supabaseAdmin
-    .from("spotify_connections")
-    .select("spotify_display_name, spotify_user_id, created_at")
-    .eq("user_id", userId)
-    .maybeSingle();
-  return { connected: !!data, displayName: data?.spotify_display_name ?? null };
-});
+export const getSpotifyStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const userId = context.userId;
+    const { data } = await supabaseAdmin
+      .from("spotify_connections")
+      .select("spotify_display_name, spotify_user_id, created_at")
+      .eq("user_id", userId)
+      .maybeSingle();
+    return { connected: !!data, displayName: data?.spotify_display_name ?? null };
+  });
 
 // Disconnect
-export const disconnectSpotify = createServerFn({ method: "POST" }).handler(async () => {
-  const { userId } = await getAuthUserFromRequest();
-  await supabaseAdmin.from("spotify_connections").delete().eq("user_id", userId);
-  return { success: true };
-});
+export const disconnectSpotify = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const userId = context.userId;
+    await supabaseAdmin.from("spotify_connections").delete().eq("user_id", userId);
+    return { success: true };
+  });
 
 // Sync liked songs (first 200)
-export const syncLikedSongs = createServerFn({ method: "POST" }).handler(async () => {
-  const { userId } = await getAuthUserFromRequest();
-  const accessToken = await refreshSpotifyToken(userId);
+export const syncLikedSongs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const userId = context.userId;
+    const accessToken = await refreshSpotifyToken(userId);
 
-  const tracks: ReturnType<typeof mapTrack>[] = [];
-  let url: string | null = `${SPOTIFY_API}/me/tracks?limit=50`;
-  let pages = 0;
-  while (url && pages < 4) {
-    const res: Response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-    if (!res.ok) {
-      console.error("Spotify liked failed", res.status, await res.text());
-      throw new Error("Failed to fetch liked songs");
+    const tracks: ReturnType<typeof mapTrack>[] = [];
+    let url: string | null = `${SPOTIFY_API}/me/tracks?limit=50`;
+    let pages = 0;
+    while (url && pages < 4) {
+      const res: Response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!res.ok) {
+        console.error("Spotify liked failed", res.status, await res.text());
+        throw new Error("Failed to fetch liked songs");
+      }
+      const json = (await res.json()) as { items: { track: SpotifyTrackObj }[]; next: string | null };
+      for (const it of json.items) if (it.track) tracks.push(mapTrack(it.track));
+      url = json.next;
+      pages++;
     }
-    const json = (await res.json()) as { items: { track: SpotifyTrackObj }[]; next: string | null };
-    for (const it of json.items) if (it.track) tracks.push(mapTrack(it.track));
-    url = json.next;
-    pages++;
-  }
 
-  // Replace existing liked tracks
-  await supabaseAdmin.from("liked_tracks").delete().eq("user_id", userId);
-  if (tracks.length > 0) {
-    const { error } = await supabaseAdmin
-      .from("liked_tracks")
-      .insert(tracks.map((t) => ({ ...t, user_id: userId })));
-    if (error) {
-      console.error("Insert liked failed", error);
-      throw new Error("Failed to save liked songs");
+    await supabaseAdmin.from("liked_tracks").delete().eq("user_id", userId);
+    if (tracks.length > 0) {
+      const { error } = await supabaseAdmin
+        .from("liked_tracks")
+        .insert(tracks.map((t) => ({ ...t, user_id: userId })));
+      if (error) {
+        console.error("Insert liked failed", error);
+        throw new Error("Failed to save liked songs");
+      }
     }
-  }
-  return { count: tracks.length };
-});
+    return { count: tracks.length };
+  });
 
 // Sync playlists (metadata + tracks for each, capped)
-export const syncPlaylists = createServerFn({ method: "POST" }).handler(async () => {
-  const { userId } = await getAuthUserFromRequest();
-  const accessToken = await refreshSpotifyToken(userId);
+export const syncPlaylists = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const userId = context.userId;
+    const accessToken = await refreshSpotifyToken(userId);
 
-  // Get user's playlists
-  const playlists: { id: string; name: string; description: string | null; image: string | null }[] = [];
-  let plUrl: string | null = `${SPOTIFY_API}/me/playlists?limit=50`;
-  while (plUrl) {
-    const res: Response = await fetch(plUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
-    if (!res.ok) throw new Error("Failed to fetch playlists");
-    const json = (await res.json()) as {
-      items: { id: string; name: string; description: string | null; images: { url: string }[] }[];
-      next: string | null;
-    };
-    for (const p of json.items) {
-      playlists.push({
-        id: p.id,
-        name: p.name,
-        description: p.description || null,
-        image: p.images?.[0]?.url ?? null,
+    const playlists: { id: string; name: string; description: string | null; image: string | null }[] = [];
+    let plUrl: string | null = `${SPOTIFY_API}/me/playlists?limit=50`;
+    while (plUrl) {
+      const res: Response = await fetch(plUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!res.ok) throw new Error("Failed to fetch playlists");
+      const json = (await res.json()) as {
+        items: { id: string; name: string; description: string | null; images: { url: string }[] }[];
+        next: string | null;
+      };
+      for (const p of json.items) {
+        playlists.push({
+          id: p.id,
+          name: p.name,
+          description: p.description || null,
+          image: p.images?.[0]?.url ?? null,
+        });
+      }
+      plUrl = json.next;
+    }
+
+    await supabaseAdmin.from("playlists").delete().eq("user_id", userId);
+
+    let totalTracks = 0;
+    for (const p of playlists) {
+      const { data: pl, error: plErr } = await supabaseAdmin
+        .from("playlists")
+        .insert({
+          user_id: userId,
+          name: p.name,
+          description: p.description,
+          cover_url: p.image,
+        })
+        .select("id")
+        .single();
+      if (plErr || !pl) {
+        console.error("Insert playlist failed", plErr);
+        continue;
+      }
+
+      const tRes = await fetch(`${SPOTIFY_API}/playlists/${p.id}/tracks?limit=100`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
-    }
-    plUrl = json.next;
-  }
+      if (!tRes.ok) continue;
+      const tJson = (await tRes.json()) as { items: { track: SpotifyTrackObj | null }[] };
 
-  // Wipe existing playlists for clean re-sync
-  await supabaseAdmin.from("playlists").delete().eq("user_id", userId);
+      const rows = tJson.items
+        .map((it, idx) => (it.track ? { ...mapTrack(it.track), playlist_id: pl.id, user_id: userId, position: idx } : null))
+        .filter((x): x is NonNullable<typeof x> => !!x);
 
-  let totalTracks = 0;
-  for (const p of playlists) {
-    const { data: pl, error: plErr } = await supabaseAdmin
-      .from("playlists")
-      .insert({
-        user_id: userId,
-        name: p.name,
-        description: p.description,
-        cover_url: p.image,
-      })
-      .select("id")
-      .single();
-    if (plErr || !pl) {
-      console.error("Insert playlist failed", plErr);
-      continue;
+      if (rows.length > 0) {
+        await supabaseAdmin.from("playlist_tracks").insert(rows);
+        totalTracks += rows.length;
+      }
     }
 
-    // Fetch first 100 tracks of playlist
-    const tRes = await fetch(`${SPOTIFY_API}/playlists/${p.id}/tracks?limit=100`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (!tRes.ok) continue;
-    const tJson = (await tRes.json()) as { items: { track: SpotifyTrackObj | null }[] };
-
-    const rows = tJson.items
-      .map((it, idx) => (it.track ? { ...mapTrack(it.track), playlist_id: pl.id, user_id: userId, position: idx } : null))
-      .filter((x): x is NonNullable<typeof x> => !!x);
-
-    if (rows.length > 0) {
-      await supabaseAdmin.from("playlist_tracks").insert(rows);
-      totalTracks += rows.length;
-    }
-  }
-
-  return { playlists: playlists.length, tracks: totalTracks };
-});
+    return { playlists: playlists.length, tracks: totalTracks };
+  });

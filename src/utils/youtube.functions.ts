@@ -1,11 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getAuthUserFromRequest } from "@/utils/auth.server";
-
-async function getAuthUser() {
-  const { userId } = await getAuthUserFromRequest();
-  return userId;
-}
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 interface YTSearchItem {
   id: { videoId: string };
@@ -34,9 +29,10 @@ async function searchYouTubeOnce(query: string): Promise<string | null> {
 
 // Resolve a single track to a YouTube video id (cached in DB once found)
 export const resolveYouTube = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { table: "liked_tracks" | "playlist_tracks"; trackId: string }) => d)
-  .handler(async ({ data }) => {
-    const userId = await getAuthUser();
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
     const { data: row, error } = await supabaseAdmin
       .from(data.table)
       .select("id, title, artist, youtube_video_id, user_id")
