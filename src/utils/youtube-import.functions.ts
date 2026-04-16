@@ -1,11 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getAuthUserFromRequest } from "@/utils/auth.server";
-
-async function getAuthUser() {
-  const { userId } = await getAuthUserFromRequest();
-  return userId;
-}
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 function extractVideoId(url: string): string | null {
   try {
@@ -14,12 +9,11 @@ function extractVideoId(url: string): string | null {
     if (u.hostname.includes("youtube.com")) {
       const v = u.searchParams.get("v");
       if (v) return v;
-      // Shorts
       const m = u.pathname.match(/\/shorts\/([^/?]+)/);
       if (m) return m[1];
     }
   } catch {
-    /* not a URL — maybe the user pasted just an ID */
+    /* not a URL */
   }
   if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
   return null;
@@ -42,7 +36,6 @@ interface YTVideoMeta {
 }
 
 function parseISODuration(iso: string): number {
-  // PT#H#M#S
   const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!m) return 0;
   return (Number(m[1] || 0) * 3600) + (Number(m[2] || 0) * 60) + Number(m[3] || 0);
@@ -61,9 +54,10 @@ async function fetchVideoMeta(videoIds: string[]): Promise<YTVideoMeta[]> {
 }
 
 export const addYouTubeVideo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { url: string }) => d)
-  .handler(async ({ data }) => {
-    const userId = await getAuthUser();
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
     const videoId = extractVideoId(data.url.trim());
     if (!videoId) throw new Error("Invalid YouTube URL");
 
@@ -98,14 +92,14 @@ interface YTPlaylistItem {
 }
 
 export const importYouTubePlaylist = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { url: string; name?: string }) => d)
-  .handler(async ({ data }) => {
-    const userId = await getAuthUser();
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
     const apiKey = process.env.YOUTUBE_API_KEY!;
     const playlistId = extractPlaylistId(data.url.trim());
     if (!playlistId) throw new Error("Invalid YouTube playlist URL");
 
-    // Get playlist meta for default name + cover
     let playlistName = data.name?.trim() || "YouTube Playlist";
     let cover: string | null = null;
     try {
@@ -123,11 +117,10 @@ export const importYouTubePlaylist = createServerFn({ method: "POST" })
       }
     } catch { /* non-fatal */ }
 
-    // Page through items
     const videoIds: string[] = [];
     let pageToken: string | undefined;
     let pages = 0;
-    while (pages < 4) { // up to 200 items
+    while (pages < 4) {
       const u = new URL("https://www.googleapis.com/youtube/v3/playlistItems");
       u.searchParams.set("part", "contentDetails");
       u.searchParams.set("playlistId", playlistId);
@@ -149,7 +142,6 @@ export const importYouTubePlaylist = createServerFn({ method: "POST" })
 
     if (videoIds.length === 0) throw new Error("No videos found in this playlist");
 
-    // Fetch metadata in chunks of 50
     const allMeta: YTVideoMeta[] = [];
     for (let i = 0; i < videoIds.length; i += 50) {
       const chunk = videoIds.slice(i, i + 50);
@@ -157,7 +149,6 @@ export const importYouTubePlaylist = createServerFn({ method: "POST" })
       allMeta.push(...meta);
     }
 
-    // Create playlist
     const { data: pl, error: plErr } = await supabaseAdmin
       .from("playlists")
       .insert({
