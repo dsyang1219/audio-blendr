@@ -28,34 +28,49 @@ export function Player() {
       setVideoId(current.youtube_video_id);
       return;
     }
-    // Need to resolve via YouTube search
-    setResolving(true);
-    setVideoId(null);
-    const table = current.spotify_track_id ? "liked_tracks" : "playlist_tracks";
-    // Try liked first, then playlist; both server fn checks ownership and table
-    resolveYT({ data: { table: "liked_tracks", trackId: current.id } })
-      .then((r) => {
-        if (r.videoId) {
-          setVideoId(r.videoId);
-        } else {
-          // try playlist_tracks
-          return resolveYT({ data: { table: "playlist_tracks", trackId: current.id } }).then((r2) => {
-            if (r2.videoId) setVideoId(r2.videoId);
-            else toast.error(`Couldn't find "${current.title}" on YouTube`);
-          });
+
+    let cancelled = false;
+    const lookup = async () => {
+      setResolving(true);
+      setVideoId(null);
+
+      const preferredTable = current.sourceTable ?? (current.spotify_track_id ? "liked_tracks" : "playlist_tracks");
+      const fallbackTable = preferredTable === "liked_tracks" ? "playlist_tracks" : "liked_tracks";
+
+      try {
+        const result = await resolveYT({ data: { table: preferredTable, trackId: current.id } });
+        if (!cancelled && result.videoId) {
+          setVideoId(result.videoId);
+          return;
         }
-      })
-      .catch(() => {
-        // try the other table
-        const other = table === "liked_tracks" ? "playlist_tracks" : "liked_tracks";
-        resolveYT({ data: { table: other, trackId: current.id } })
-          .then((r) => {
-            if (r.videoId) setVideoId(r.videoId);
-            else toast.error(`Couldn't find "${current?.title}" on YouTube`);
-          })
-          .catch(() => toast.error("YouTube lookup failed"));
-      })
-      .finally(() => setResolving(false));
+
+        const fallback = await resolveYT({ data: { table: fallbackTable, trackId: current.id } });
+        if (!cancelled && fallback.videoId) {
+          setVideoId(fallback.videoId);
+          return;
+        }
+
+        if (!cancelled) toast.error(`Couldn't find "${current.title}" on YouTube`);
+      } catch {
+        try {
+          const fallback = await resolveYT({ data: { table: fallbackTable, trackId: current.id } });
+          if (!cancelled && fallback.videoId) {
+            setVideoId(fallback.videoId);
+            return;
+          }
+          if (!cancelled) toast.error(`Couldn't find "${current.title}" on YouTube`);
+        } catch {
+          if (!cancelled) toast.error("YouTube lookup failed");
+        }
+      } finally {
+        if (!cancelled) setResolving(false);
+      }
+    };
+
+    void lookup();
+    return () => {
+      cancelled = true;
+    };
   }, [current, resolveYT]);
 
   // Progress polling

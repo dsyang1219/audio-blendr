@@ -15,9 +15,10 @@ function fmt(seconds?: number | null) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function TrackList({ tracks }: TrackListProps) {
+export function TrackList({ tracks, table }: TrackListProps) {
   const { playQueue, current } = usePlayer();
   const [hover, setHover] = useState<string | null>(null);
+  const queueTracks = tracks.map((track) => ({ ...track, sourceTable: track.sourceTable ?? table }));
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card/40">
@@ -28,14 +29,14 @@ export function TrackList({ tracks }: TrackListProps) {
         <span className="text-right">Time</span>
       </div>
       <ul>
-        {tracks.map((t, i) => {
+        {queueTracks.map((t, i) => {
           const isCurrent = current?.id === t.id;
           return (
             <li
               key={t.id}
               onMouseEnter={() => setHover(t.id)}
               onMouseLeave={() => setHover(null)}
-              onDoubleClick={() => playQueue(tracks, i)}
+              onDoubleClick={() => playQueue(queueTracks, i)}
               className={cn(
                 "grid cursor-pointer grid-cols-[3rem_1fr_1fr_4rem] items-center gap-4 px-4 py-2 text-sm hover:bg-accent/40",
                 isCurrent && "text-primary"
@@ -44,7 +45,7 @@ export function TrackList({ tracks }: TrackListProps) {
               <span className="flex justify-center text-muted-foreground">
                 {hover === t.id ? (
                   <button
-                    onClick={() => playQueue(tracks, i)}
+                    onClick={() => playQueue(queueTracks, i)}
                     className="text-foreground hover:text-primary"
                     aria-label="Play"
                   >
