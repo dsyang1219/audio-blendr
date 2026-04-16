@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireServerFnAuth } from "@/utils/server-fn-auth";
 
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
@@ -18,9 +18,8 @@ function getRedirectUri(origin: string) {
   return `${origin}/spotify/callback`;
 }
 
-// Build the Spotify authorize URL for the current user
 export const getSpotifyAuthUrl = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireServerFnAuth])
   .inputValidator((d: { origin: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
@@ -39,9 +38,8 @@ export const getSpotifyAuthUrl = createServerFn({ method: "POST" })
     return { url: `${SPOTIFY_AUTH_URL}?${params.toString()}` };
   });
 
-// Exchange code for tokens and store
 export const completeSpotifyAuth = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireServerFnAuth])
   .inputValidator((d: { code: string; state: string; origin: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
@@ -176,9 +174,8 @@ function mapTrack(t: SpotifyTrackObj) {
   };
 }
 
-// Get connection status
 export const getSpotifyStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireServerFnAuth])
   .handler(async ({ context }) => {
     const userId = context.userId;
     const { data } = await supabaseAdmin
@@ -189,18 +186,16 @@ export const getSpotifyStatus = createServerFn({ method: "POST" })
     return { connected: !!data, displayName: data?.spotify_display_name ?? null };
   });
 
-// Disconnect
 export const disconnectSpotify = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireServerFnAuth])
   .handler(async ({ context }) => {
     const userId = context.userId;
     await supabaseAdmin.from("spotify_connections").delete().eq("user_id", userId);
     return { success: true };
   });
 
-// Sync liked songs (first 200)
 export const syncLikedSongs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireServerFnAuth])
   .handler(async ({ context }) => {
     const userId = context.userId;
     const accessToken = await refreshSpotifyToken(userId);
@@ -233,9 +228,8 @@ export const syncLikedSongs = createServerFn({ method: "POST" })
     return { count: tracks.length };
   });
 
-// Sync playlists (metadata + tracks for each, capped)
 export const syncPlaylists = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireServerFnAuth])
   .handler(async ({ context }) => {
     const userId = context.userId;
     const accessToken = await refreshSpotifyToken(userId);
