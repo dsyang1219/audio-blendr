@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SpotifyCallbackRouteImport } from './routes/spotify.callback'
 import { Route as AppPlaylistsRouteImport } from './routes/_app/playlists'
 import { Route as AppLibraryRouteImport } from './routes/_app/library'
+import { Route as AppConnectRouteImport } from './routes/_app/connect'
 import { Route as AppPlaylistsIdRouteImport } from './routes/_app/playlists.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -30,6 +32,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SpotifyCallbackRoute = SpotifyCallbackRouteImport.update({
+  id: '/spotify/callback',
+  path: '/spotify/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppPlaylistsRoute = AppPlaylistsRouteImport.update({
   id: '/playlists',
   path: '/playlists',
@@ -38,6 +45,11 @@ const AppPlaylistsRoute = AppPlaylistsRouteImport.update({
 const AppLibraryRoute = AppLibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConnectRoute = AppConnectRouteImport.update({
+  id: '/connect',
+  path: '/connect',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPlaylistsIdRoute = AppPlaylistsIdRouteImport.update({
@@ -49,15 +61,19 @@ const AppPlaylistsIdRoute = AppPlaylistsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/connect': typeof AppConnectRoute
   '/library': typeof AppLibraryRoute
   '/playlists': typeof AppPlaylistsRouteWithChildren
+  '/spotify/callback': typeof SpotifyCallbackRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/connect': typeof AppConnectRoute
   '/library': typeof AppLibraryRoute
   '/playlists': typeof AppPlaylistsRouteWithChildren
+  '/spotify/callback': typeof SpotifyCallbackRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
 }
 export interface FileRoutesById {
@@ -65,22 +81,40 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_app/connect': typeof AppConnectRoute
   '/_app/library': typeof AppLibraryRoute
   '/_app/playlists': typeof AppPlaylistsRouteWithChildren
+  '/spotify/callback': typeof SpotifyCallbackRoute
   '/_app/playlists/$id': typeof AppPlaylistsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/library' | '/playlists' | '/playlists/$id'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/connect'
+    | '/library'
+    | '/playlists'
+    | '/spotify/callback'
+    | '/playlists/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/library' | '/playlists' | '/playlists/$id'
+  to:
+    | '/'
+    | '/auth'
+    | '/connect'
+    | '/library'
+    | '/playlists'
+    | '/spotify/callback'
+    | '/playlists/$id'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/auth'
+    | '/_app/connect'
     | '/_app/library'
     | '/_app/playlists'
+    | '/spotify/callback'
     | '/_app/playlists/$id'
   fileRoutesById: FileRoutesById
 }
@@ -88,6 +122,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  SpotifyCallbackRoute: typeof SpotifyCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -113,6 +148,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/spotify/callback': {
+      id: '/spotify/callback'
+      path: '/spotify/callback'
+      fullPath: '/spotify/callback'
+      preLoaderRoute: typeof SpotifyCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/playlists': {
       id: '/_app/playlists'
       path: '/playlists'
@@ -125,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof AppLibraryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/connect': {
+      id: '/_app/connect'
+      path: '/connect'
+      fullPath: '/connect'
+      preLoaderRoute: typeof AppConnectRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/playlists/$id': {
@@ -150,11 +199,13 @@ const AppPlaylistsRouteWithChildren = AppPlaylistsRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppConnectRoute: typeof AppConnectRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppPlaylistsRoute: typeof AppPlaylistsRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppConnectRoute: AppConnectRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppPlaylistsRoute: AppPlaylistsRouteWithChildren,
 }
@@ -165,6 +216,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  SpotifyCallbackRoute: SpotifyCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
