@@ -22,6 +22,7 @@ export type Database = {
           created_at: string
           duration_seconds: number | null
           id: string
+          source: string
           spotify_track_id: string | null
           title: string
           user_id: string
@@ -34,6 +35,7 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           id?: string
+          source?: string
           spotify_track_id?: string | null
           title: string
           user_id: string
@@ -46,6 +48,7 @@ export type Database = {
           created_at?: string
           duration_seconds?: number | null
           id?: string
+          source?: string
           spotify_track_id?: string | null
           title?: string
           user_id?: string
@@ -96,6 +99,7 @@ export type Database = {
           id: string
           playlist_id: string
           position: number
+          source: string
           spotify_track_id: string | null
           title: string
           user_id: string
@@ -110,6 +114,7 @@ export type Database = {
           id?: string
           playlist_id: string
           position?: number
+          source?: string
           spotify_track_id?: string | null
           title: string
           user_id: string
@@ -124,6 +129,7 @@ export type Database = {
           id?: string
           playlist_id?: string
           position?: number
+          source?: string
           spotify_track_id?: string | null
           title?: string
           user_id?: string
@@ -146,6 +152,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          source: string
           updated_at: string
           user_id: string
         }
@@ -155,6 +162,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          source?: string
           updated_at?: string
           user_id: string
         }
@@ -164,6 +172,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          source?: string
           updated_at?: string
           user_id?: string
         }
