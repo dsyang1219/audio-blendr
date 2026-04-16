@@ -295,6 +295,3 @@ export const syncPlaylists = createServerFn({ method: "POST" }).handler(async ()
 
   return { playlists: playlists.length, tracks: totalTracks };
 });
-
-// Avoid unused import warning
-void setResponseHeader;
