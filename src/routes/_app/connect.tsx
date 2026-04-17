@@ -9,6 +9,7 @@ import {
   disconnectSpotify,
 } from "@/utils/spotify.functions";
 import { importYouTubePlaylist, addYouTubeVideo } from "@/utils/youtube-import.functions";
+import { batchResolveYouTube } from "@/utils/youtube.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,23 @@ function ConnectPage() {
   const disconnectFn = useServerFn(disconnectSpotify);
   const importPlaylistFn = useServerFn(importYouTubePlaylist);
   const addVideoFn = useServerFn(addYouTubeVideo);
+  const batchResolveFn = useServerFn(batchResolveYouTube);
+
+  const runBatchResolve = async (silent = false) => {
+    try {
+      const r = await batchResolveFn({ data: {} });
+      if (r.total === 0) {
+        if (!silent) toast.success("All tracks already resolved");
+        return;
+      }
+      const msg = `Resolved ${r.resolved}/${r.attempted} YouTube IDs · ${r.remaining} left`;
+      if (r.quotaHit) toast.warning(`${msg} (daily quota hit)`);
+      else if (r.remaining > 0) toast.success(`${msg} — run again later for more`);
+      else toast.success(msg);
+    } catch (e) {
+      if (!silent) toast.error(e instanceof Error ? e.message : "Resolve failed");
+    }
+  };
 
   useEffect(() => {
     getStatusFn().then(setStatus).catch(() => setStatus({ connected: false, displayName: null }));
@@ -79,6 +97,7 @@ function ConnectPage() {
     try {
       const r = await syncLikedFn();
       toast.success(`Synced ${r.count} liked songs`);
+      void runBatchResolve(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to sync");
     }
@@ -103,6 +122,7 @@ function ConnectPage() {
         const skippedNote = r.skipped ? ` (skipped ${r.skipped} already-synced)` : "";
         toast.success(`Synced ${r.playlists} new playlists, ${r.tracks} tracks${skippedNote}`);
       }
+      void runBatchResolve(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to sync");
     }
@@ -175,6 +195,18 @@ function ConnectPage() {
               <Button onClick={syncAll} disabled={!!busy} variant="secondary">
                 {busy === "playlists" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sync playlists
+              </Button>
+              <Button
+                onClick={async () => {
+                  setBusy("resolve");
+                  await runBatchResolve(false);
+                  setBusy(null);
+                }}
+                disabled={!!busy}
+                variant="secondary"
+              >
+                {busy === "resolve" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Resolve YouTube IDs
               </Button>
               <Button onClick={disconnect} disabled={!!busy} variant="ghost">
                 <Unplug className="mr-2 h-4 w-4" /> Disconnect
