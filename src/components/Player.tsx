@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import YouTube from "react-youtube";
 import type { YouTubePlayer } from "react-youtube";
-import { Play, Pause, SkipBack, SkipForward, Music, Volume2 } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Music, Volume2, Shuffle } from "lucide-react";
 import { usePlayer } from "@/lib/player-context";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveYouTube } from "@/utils/youtube.functions";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export function Player() {
-  const { current, isPlaying, setIsPlaying, playNext, playPrev } = usePlayer();
+  const { current, isPlaying, setIsPlaying, playNext, playPrev, shuffle, toggleShuffle } = usePlayer();
   const [videoId, setVideoId] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [progress, setProgress] = useState(0);
