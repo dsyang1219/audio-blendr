@@ -416,7 +416,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
     let pageCount = 0;
     let partialReason: string | null = null;
     while (plUrl && pageCount < 20) {
-      const res: Response = await spotifyFetch(plUrl, accessToken);
+      const res: Response = await spotifyFetch(plUrl, accessToken, { maxRetries: 2, maxWaitMs: 5_000 });
       if (!res.ok) {
         const errText = await res.text();
         console.error("Spotify /me/playlists failed", res.status, errText);
@@ -510,7 +510,7 @@ export const syncSinglePlaylist = createServerFn({ method: "POST" })
     // Step 1: ONE Spotify call to get just titles + artists (minimal fields).
     const minimalFields = "items(track(id,name,artists(name)))";
     const url = `${SPOTIFY_API}/playlists/${pl.spotify_playlist_id}/tracks?limit=100&fields=${encodeURIComponent(minimalFields)}`;
-    const res = await spotifyFetch(url, accessToken);
+    const res = await spotifyFetch(url, accessToken, { maxRetries: 2, maxWaitMs: 5_000 });
     if (!res.ok) {
       if (res.status === 429) throw new Error("Spotify is rate-limiting right now — please wait a few minutes and try again");
       if (res.status === 403) throw new Error("Spotify denied access to this playlist (it may be an algorithmic playlist like Discover Weekly)");
