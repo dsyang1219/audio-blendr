@@ -10,6 +10,7 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   const { user } = useAuth();
+  const ctaTo = user ? "/library" : "/auth";
 
   return (
     <div className="relative min-h-screen overflow-hidden text-foreground">
@@ -19,8 +20,14 @@ function Landing() {
           <Logo size="md" />
         </Link>
         <div className="flex gap-2">
-          <Link to="/auth"><Button variant="ghost">Sign in</Button></Link>
-          <Link to="/auth"><Button className="bg-gradient-primary shadow-glow hover:shadow-pink hover:scale-105 transition-all">Get started</Button></Link>
+          {user ? (
+            <Link to="/library"><Button variant="ghost">Open library</Button></Link>
+          ) : (
+            <>
+              <Link to="/auth"><Button variant="ghost">Sign in</Button></Link>
+              <Link to="/auth"><Button className="bg-gradient-primary shadow-glow hover:shadow-pink hover:scale-105 transition-all">Get started</Button></Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -38,9 +45,9 @@ function Landing() {
             Connect your Spotify account, sync your liked songs and playlists, and stream every track via YouTube — all in one beautiful player.
           </p>
           <div className="mt-10 flex justify-center gap-3">
-            <Link to="/auth">
+            <Link to={ctaTo}>
               <Button size="lg" className="bg-gradient-primary text-base shadow-glow hover:shadow-pink hover:scale-105 transition-all">
-                Get started — it's free
+                {user ? "Open your library" : "Get started — it's free"}
               </Button>
             </Link>
           </div>
