@@ -28,37 +28,21 @@ export function LogoMark({ className }: { className?: string }) {
           <stop offset="100%" stopColor="oklch(0.85 0.08 250)" />
         </linearGradient>
       </defs>
-      {/* Ear tufts */}
-      <path d="M8 10 L11 4 L14 11 Z" fill={`url(#${gradA})`} />
-      <path d="M32 10 L29 4 L26 11 Z" fill={`url(#${gradA})`} />
-      {/* Body / head — single rounded owl silhouette */}
+      {/* Left wave */}
       <path
-        d="M20 6 C28 6 33 12 33 20 C33 29 27 35 20 35 C13 35 7 29 7 20 C7 12 12 6 20 6 Z"
-        fill={`url(#${gradA})`}
-      />
-      {/* Eye discs */}
-      <circle cx="14.5" cy="18" r="4.5" fill={`url(#${gradB})`} />
-      <circle cx="25.5" cy="18" r="4.5" fill={`url(#${gradB})`} />
-      {/* Pupils */}
-      <circle cx="14.5" cy="18" r="2" fill="oklch(0.18 0.04 260)" />
-      <circle cx="25.5" cy="18" r="2" fill="oklch(0.18 0.04 260)" />
-      {/* Eye shine */}
-      <circle cx="15.3" cy="17.2" r="0.7" fill="oklch(1 0 0)" />
-      <circle cx="26.3" cy="17.2" r="0.7" fill="oklch(1 0 0)" />
-      {/* Beak */}
-      <path d="M20 21 L18 24 L22 24 Z" fill="oklch(0.78 0.15 60)" />
-      {/* Wing hint */}
-      <path
-        d="M11 24 Q13 30 18 31"
-        stroke="oklch(0.4 0.1 270 / 0.5)"
-        strokeWidth="1.2"
+        d="M6 20 Q12 8 18 20 T30 20"
+        stroke={`url(#${gradA})`}
+        strokeWidth="3"
         strokeLinecap="round"
+        fill="none"
       />
+      {/* Right wave (mirrored, offset) */}
       <path
-        d="M29 24 Q27 30 22 31"
-        stroke="oklch(0.4 0.1 270 / 0.5)"
-        strokeWidth="1.2"
+        d="M10 20 Q16 32 22 20 T34 20"
+        stroke={`url(#${gradB})`}
+        strokeWidth="3"
         strokeLinecap="round"
+        fill="none"
       />
     </svg>
   );
