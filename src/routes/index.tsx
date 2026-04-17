@@ -1,6 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Music, Youtube, Library, Bird } from "lucide-react";
+import { Music, Youtube, Library } from "lucide-react";
+
+function OwlIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true">
+      {/* Head/body silhouette */}
+      <path d="M12 2c-4.5 0-7.5 3-7.5 7v6c0 3.6 3 6.5 7.5 6.5s7.5-2.9 7.5-6.5V9c0-4-3-7-7.5-7z" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.15" />
+      {/* Ear tufts */}
+      <path d="M5.5 5.5L4 3M18.5 5.5L20 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Eyes (rings) */}
+      <circle cx="9" cy="10" r="2.2" stroke="currentColor" strokeWidth="1.3" fill="none" />
+      <circle cx="15" cy="10" r="2.2" stroke="currentColor" strokeWidth="1.3" fill="none" />
+      {/* Pupils */}
+      <circle cx="9" cy="10" r="0.9" fill="currentColor" />
+      <circle cx="15" cy="10" r="0.9" fill="currentColor" />
+      {/* Beak */}
+      <path d="M12 12.2l-0.9 1.6h1.8z" fill="currentColor" />
+    </svg>
+  );
+}
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 
@@ -34,7 +53,7 @@ function Landing() {
       <main className="container mx-auto px-6 py-20">
         <section className="mx-auto max-w-3xl text-center animate-fade-in">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium">
-            <Bird className="h-3.5 w-3.5 text-primary" />
+            <OwlIcon className="h-3.5 w-3.5 text-primary" />
             Built for Maddy
           </div>
           <h2 className="text-5xl font-bold tracking-tight md:text-7xl">
