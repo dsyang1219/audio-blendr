@@ -5,6 +5,7 @@ import { TrackList } from "@/components/TrackList";
 import { Heart, Play, Shuffle } from "lucide-react";
 import type { Track } from "@/lib/player-context";
 import { usePlayer } from "@/lib/player-context";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AddSongDialog } from "@/components/AddSongDialog";
 
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/_app/library")({
 function LibraryPage() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
-  const { playQueue } = usePlayer();
+  const { playQueue, shuffle, toggleShuffle } = usePlayer();
 
   const load = useCallback(() => {
     setLoading(true);
@@ -35,14 +36,14 @@ function LibraryPage() {
 
   const queueTracks = tracks.map((t) => ({ ...t, sourceTable: "liked_tracks" as const }));
 
-  const handlePlayAll = () => {
+  const handlePlay = () => {
     if (queueTracks.length === 0) return;
-    playQueue(queueTracks, 0, { shuffle: false });
+    playQueue(queueTracks, 0, { shuffle });
   };
 
-  const handleShuffle = () => {
-    if (queueTracks.length === 0) return;
-    playQueue(queueTracks, 0, { shuffle: true });
+  const handleToggleShuffle = () => {
+    // If nothing is playing yet, just toggle the preference; otherwise reshuffle in place
+    toggleShuffle();
   };
 
   return (
@@ -65,10 +66,21 @@ function LibraryPage() {
 
       <div className="px-4 pb-8 pt-2 md:px-8">
         <div className="mb-6 flex flex-wrap items-center gap-3">
-          <Button onClick={handlePlayAll} disabled={tracks.length === 0} size="lg" className="gap-2 shadow-glow hover:scale-105 transition-all">
+          <Button onClick={handlePlay} disabled={tracks.length === 0} size="lg" className="gap-2 shadow-glow hover:scale-105 transition-all">
             <Play className="h-5 w-5 fill-current" /> Play
           </Button>
-          <Button onClick={handleShuffle} disabled={tracks.length === 0} size="lg" variant="secondary" className="gap-2">
+          <Button
+            onClick={handleToggleShuffle}
+            disabled={tracks.length === 0}
+            size="lg"
+            variant="ghost"
+            aria-pressed={shuffle}
+            className={cn(
+              "gap-2 transition-colors",
+              shuffle ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"
+            )}
+            title={shuffle ? "Shuffle on" : "Shuffle off"}
+          >
             <Shuffle className="h-5 w-5" /> Shuffle
           </Button>
           <AddSongDialog onAdded={load} />

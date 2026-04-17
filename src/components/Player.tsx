@@ -175,10 +175,11 @@ export function Player() {
             <button
               onClick={toggleShuffle}
               className={cn(
-                "hidden sm:inline-flex transition hover:text-foreground",
+                "transition hover:text-foreground",
                 shuffle ? "text-primary" : "text-muted-foreground"
               )}
               aria-label="Toggle shuffle"
+              aria-pressed={shuffle}
               title={shuffle ? "Shuffle on" : "Shuffle off"}
             >
               <Shuffle className="h-4 w-4" />
