@@ -92,6 +92,7 @@ function ConnectPage() {
         playlists: number;
         tracks: number;
         skipped?: number;
+        remaining?: number;
         partial?: boolean;
         message?: string | null;
       };
