@@ -344,9 +344,8 @@ export const addSpotifyTrackToPlaylist = createServerFn({ method: "POST" })
     return { title: data.title };
   });
 
-// Only request the bare-minimum fields: track id, title, artist names.
-// Skipping album / images / duration shrinks payloads and reduces 429s.
-const TRACK_FIELDS = "next,items(track(id,name,artists(name)))";
+// Include album name, art, and duration so we can store full metadata.
+const TRACK_FIELDS = "next,items(track(id,name,duration_ms,artists(name),album(name,images(url))))";
 const PLAYLIST_LIST_FIELDS = "next,items(id,name,description,images(url))";
 
 async function fetchAllPlaylistTracks(
