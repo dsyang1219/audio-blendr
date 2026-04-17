@@ -54,13 +54,14 @@ async function searchYouTubeOnce(query: string): Promise<string | null> {
 }
 
 async function findTrackRow(
+  supabase: DB,
   table: TrackTable,
   userId: string,
   trackId: string,
   title?: string,
   artist?: string,
 ): Promise<TrackLookupRow | null> {
-  const byId = await supabaseAdmin
+  const byId = await supabase
     .from(table)
     .select("id, title, artist, youtube_video_id, user_id")
     .eq("id", trackId)
@@ -72,7 +73,7 @@ async function findTrackRow(
   const normalizedArtist = artist?.trim();
   if (!normalizedTitle || !normalizedArtist) return null;
 
-  const byMetadata = await supabaseAdmin
+  const byMetadata = await supabase
     .from(table)
     .select("id, title, artist, youtube_video_id, user_id")
     .eq("user_id", userId)
