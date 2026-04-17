@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireServerFnAuth } from "@/utils/server-fn-auth";
+import { createSpotifyState, getSpotifyRedirectUri, parseSpotifyState } from "@/utils/spotify-auth";
 
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
@@ -13,10 +14,6 @@ const SCOPES = [
   "playlist-read-collaborative",
 ].join(" ");
 
-function getRedirectUri(origin: string) {
-  return `${origin}/spotify/callback`;
-}
-
 export const getSpotifyAuthUrl = createServerFn({ method: "POST" })
   .middleware([requireServerFnAuth])
   .inputValidator((d: { origin: string }) => d)
@@ -25,11 +22,11 @@ export const getSpotifyAuthUrl = createServerFn({ method: "POST" })
     const clientId = process.env.SPOTIFY_CLIENT_ID;
     if (!clientId) throw new Error("Spotify not configured");
 
-    const state = `${userId}.${crypto.randomUUID()}`;
+    const state = createSpotifyState(userId, data.origin);
     const params = new URLSearchParams({
       client_id: clientId,
       response_type: "code",
-      redirect_uri: getRedirectUri(data.origin),
+      redirect_uri: getSpotifyRedirectUri(),
       scope: SCOPES,
       state,
       show_dialog: "true",
@@ -43,8 +40,8 @@ export const completeSpotifyAuth = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const userId = context.userId;
     const supabase = context.supabase;
-    const stateUserId = data.state.split(".")[0];
-    if (stateUserId !== userId) throw new Error("State mismatch");
+    const parsedState = parseSpotifyState(data.state);
+    if (parsedState.userId !== userId) throw new Error("State mismatch");
 
     const clientId = process.env.SPOTIFY_CLIENT_ID!;
     const clientSecret = process.env.SPOTIFY_CLIENT_SECRET!;
@@ -52,7 +49,7 @@ export const completeSpotifyAuth = createServerFn({ method: "POST" })
     const body = new URLSearchParams({
       grant_type: "authorization_code",
       code: data.code,
-      redirect_uri: getRedirectUri(data.origin),
+       redirect_uri: getSpotifyRedirectUri(),
     });
 
     const tokenRes = await fetch(SPOTIFY_TOKEN_URL, {
