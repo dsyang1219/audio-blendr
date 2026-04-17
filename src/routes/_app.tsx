@@ -46,7 +46,7 @@ function AppLayout() {
           <nav className="space-y-1.5">
             <NavItem to="/library" icon={<Heart className="h-4 w-4" />}>Liked Songs</NavItem>
             <NavItem to="/playlists" icon={<Library className="h-4 w-4" />}>Playlists</NavItem>
-            <NavItem to="/connect" icon={<Plug className="h-4 w-4" />}>Spotify Sync</NavItem>
+            <NavItem to="/connect" icon={<Plug className="h-4 w-4" />}>Spotify and Youtube Sync</NavItem>
             <NavItem to="/settings" icon={<Settings className="h-4 w-4" />}>Settings</NavItem>
           </nav>
 
