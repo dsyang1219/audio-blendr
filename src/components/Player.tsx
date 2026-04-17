@@ -184,7 +184,7 @@ export function Player() {
             >
               <Shuffle className="h-4 w-4" />
             </button>
-            <button onClick={playPrev} className="hidden sm:inline-flex text-muted-foreground hover:text-foreground" aria-label="Previous">
+            <button onClick={playPrev} className="text-muted-foreground hover:text-foreground" aria-label="Previous">
               <SkipBack className="h-5 w-5" />
             </button>
             <button
@@ -198,7 +198,7 @@ export function Player() {
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
             </button>
-            <button onClick={playNext} className="hidden sm:inline-flex text-muted-foreground hover:text-foreground" aria-label="Next">
+            <button onClick={playNext} className="text-muted-foreground hover:text-foreground" aria-label="Next">
               <SkipForward className="h-5 w-5" />
             </button>
           </div>
