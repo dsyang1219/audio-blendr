@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireServerFnAuth } from "@/utils/server-fn-auth";
 import { createSpotifyState, getSpotifyRedirectUri, parseSpotifyState } from "@/utils/spotify-auth";
+import { searchYouTubeOnce } from "@/utils/youtube.server";
 
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
@@ -203,9 +204,9 @@ function mapTrack(t: SpotifyTrackObj) {
     spotify_track_id: t.id,
     title: t.name,
     artist: t.artists.map((a) => a.name).join(", "),
-    album: null as string | null,
-    album_art_url: null as string | null,
-    duration_seconds: null as number | null,
+    album: t.album?.name ?? null,
+    album_art_url: t.album?.images?.[0]?.url ?? null,
+    duration_seconds: t.duration_ms ? Math.round(t.duration_ms / 1000) : null,
   };
 }
 
@@ -301,6 +302,24 @@ export const addSpotifyTrackToPlaylist = createServerFn({ method: "POST" })
     const userId = context.userId;
     const supabase = context.supabase;
 
+    // Pre-resolve a YouTube video ID once at insert time so playback never
+    // has to look it up again. Best-effort: if it fails, we still save the track.
+    let youtubeVideoId: string | null = null;
+    try {
+      const cleanTitle = data.title.replace(/\s*[-(].*?(remaster|remix|version|feat\.?|ft\.?).*?[)]?$/i, "").trim();
+      const queries = [
+        `${data.artist} - ${cleanTitle}`,
+        `${data.artist} ${cleanTitle} audio`,
+        `${data.artist} ${data.title}`,
+      ];
+      for (const q of queries) {
+        youtubeVideoId = await searchYouTubeOnce(q);
+        if (youtubeVideoId) break;
+      }
+    } catch (e) {
+      console.warn("[addSpotifyTrack] YouTube pre-resolve failed", e);
+    }
+
     if (data.playlistId) {
       const { data: pl } = await supabase
         .from("playlists")
@@ -322,6 +341,7 @@ export const addSpotifyTrackToPlaylist = createServerFn({ method: "POST" })
         album: data.album,
         album_art_url: data.album_art_url,
         spotify_track_id: data.spotify_track_id,
+        youtube_video_id: youtubeVideoId,
         duration_seconds: data.duration_seconds,
         source: "spotify",
         position: count ?? 0,
@@ -337,6 +357,7 @@ export const addSpotifyTrackToPlaylist = createServerFn({ method: "POST" })
       album: data.album,
       album_art_url: data.album_art_url,
       spotify_track_id: data.spotify_track_id,
+      youtube_video_id: youtubeVideoId,
       duration_seconds: data.duration_seconds,
       source: "spotify",
     });
@@ -344,9 +365,8 @@ export const addSpotifyTrackToPlaylist = createServerFn({ method: "POST" })
     return { title: data.title };
   });
 
-// Only request the bare-minimum fields: track id, title, artist names.
-// Skipping album / images / duration shrinks payloads and reduces 429s.
-const TRACK_FIELDS = "next,items(track(id,name,artists(name)))";
+// Include album name, art, and duration so we can store full metadata.
+const TRACK_FIELDS = "next,items(track(id,name,duration_ms,artists(name),album(name,images(url))))";
 const PLAYLIST_LIST_FIELDS = "next,items(id,name,description,images(url))";
 
 async function fetchAllPlaylistTracks(
@@ -562,4 +582,71 @@ export const syncSinglePlaylist = createServerFn({ method: "POST" })
       throw new Error("Failed to save tracks");
     }
     return { tracks: rows.length };
+  });
+
+export const addExistingTrackToPlaylist = createServerFn({ method: "POST" })
+  .middleware([requireServerFnAuth])
+  .inputValidator(
+    (d: {
+      playlistId: string;
+      title: string;
+      artist: string;
+      album: string | null;
+      album_art_url: string | null;
+      duration_seconds: number | null;
+      spotify_track_id: string | null;
+      youtube_video_id: string | null;
+    }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
+    const supabase = context.supabase;
+
+    const { data: pl } = await supabase
+      .from("playlists")
+      .select("id, user_id")
+      .eq("id", data.playlistId)
+      .maybeSingle();
+    if (!pl || pl.user_id !== userId) throw new Error("Playlist not found");
+
+    // If we don't already have a YT video id, resolve it once now so playback
+    // never has to look it up again.
+    let youtubeVideoId = data.youtube_video_id;
+    if (!youtubeVideoId) {
+      try {
+        const cleanTitle = data.title.replace(/\s*[-(].*?(remaster|remix|version|feat\.?|ft\.?).*?[)]?$/i, "").trim();
+        const queries = [
+          `${data.artist} - ${cleanTitle}`,
+          `${data.artist} ${cleanTitle} audio`,
+          `${data.artist} ${data.title}`,
+        ];
+        for (const q of queries) {
+          youtubeVideoId = await searchYouTubeOnce(q);
+          if (youtubeVideoId) break;
+        }
+      } catch (e) {
+        console.warn("[addExistingTrack] YouTube pre-resolve failed", e);
+      }
+    }
+
+    const { count } = await supabase
+      .from("playlist_tracks")
+      .select("id", { count: "exact", head: true })
+      .eq("playlist_id", data.playlistId);
+
+    const { error } = await supabase.from("playlist_tracks").insert({
+      user_id: userId,
+      playlist_id: data.playlistId,
+      title: data.title,
+      artist: data.artist,
+      album: data.album,
+      album_art_url: data.album_art_url,
+      spotify_track_id: data.spotify_track_id,
+      youtube_video_id: youtubeVideoId,
+      duration_seconds: data.duration_seconds,
+      source: data.spotify_track_id ? "spotify" : "youtube",
+      position: count ?? 0,
+    });
+    if (error) throw new Error(error.message);
+    return { success: true };
   });

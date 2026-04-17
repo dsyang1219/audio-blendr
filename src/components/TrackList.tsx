@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { addExistingTrackToPlaylist } from "@/utils/spotify.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +44,8 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
   const { user } = useAuth();
   const [hover, setHover] = useState<string | null>(null);
   const [userPlaylists, setUserPlaylists] = useState<UserPlaylist[]>([]);
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const addTrackFn = useServerFn(addExistingTrackToPlaylist);
   const queueTracks = tracks.map((t) => ({ ...t, sourceTable: t.sourceTable ?? table }));
 
   useEffect(() => {
@@ -56,28 +60,25 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
 
   const addToPlaylist = async (track: Track, targetPlaylistId: string) => {
     if (!user) return;
-    const { count } = await supabase
-      .from("playlist_tracks")
-      .select("id", { count: "exact", head: true })
-      .eq("playlist_id", targetPlaylistId);
-
-    const { error } = await supabase.from("playlist_tracks").insert({
-      user_id: user.id,
-      playlist_id: targetPlaylistId,
-      title: track.title,
-      artist: track.artist,
-      album: track.album ?? null,
-      album_art_url: track.album_art_url ?? null,
-      duration_seconds: track.duration_seconds ?? null,
-      youtube_video_id: track.youtube_video_id ?? null,
-      spotify_track_id: track.spotify_track_id ?? null,
-      source: track.spotify_track_id ? "spotify" : "youtube",
-      position: count ?? 0,
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
+    setAddingId(track.id);
+    try {
+      await addTrackFn({
+        data: {
+          playlistId: targetPlaylistId,
+          title: track.title,
+          artist: track.artist,
+          album: track.album ?? null,
+          album_art_url: track.album_art_url ?? null,
+          duration_seconds: track.duration_seconds ?? null,
+          spotify_track_id: track.spotify_track_id ?? null,
+          youtube_video_id: track.youtube_video_id ?? null,
+        },
+      });
       toast.success("Added to playlist");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add");
+    } finally {
+      setAddingId(null);
     }
   };
 
@@ -103,12 +104,12 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
 
   return (
     <div className="overflow-hidden rounded-2xl glass">
-      <div className="grid grid-cols-[3rem_1fr_1fr_4rem_2.5rem] items-center gap-4 border-b border-border/60 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+      <div className="grid grid-cols-[2rem_1fr_3rem_2rem] md:grid-cols-[3rem_1fr_1fr_4rem_2.5rem] items-center gap-3 md:gap-4 border-b border-border/60 px-3 md:px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
         <span className="text-center">#</span>
         <span>Title</span>
         <span className="hidden md:block">Album</span>
         <span className="text-right">Time</span>
-        <span />
+        <span className="hidden md:block" />
       </div>
       <ul>
         {queueTracks.map((t, i) => {
@@ -118,16 +119,17 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
               key={t.id}
               onMouseEnter={() => setHover(t.id)}
               onMouseLeave={() => setHover(null)}
+              onClick={() => playQueue(queueTracks, i)}
               onDoubleClick={() => playQueue(queueTracks, i)}
               className={cn(
-                "group grid cursor-pointer grid-cols-[3rem_1fr_1fr_4rem_2.5rem] items-center gap-4 border-b border-border/30 px-4 py-2.5 text-sm transition-colors last:border-b-0 hover:bg-accent/40",
+                "group grid cursor-pointer grid-cols-[2rem_1fr_3rem_2rem] md:grid-cols-[3rem_1fr_1fr_4rem_2.5rem] items-center gap-3 md:gap-4 border-b border-border/30 px-3 md:px-4 py-2.5 text-sm transition-colors last:border-b-0 hover:bg-accent/40",
                 isCurrent && "bg-primary/10 text-primary"
               )}
             >
               <span className="flex justify-center text-muted-foreground">
                 {hover === t.id ? (
                   <button
-                    onClick={() => playQueue(queueTracks, i)}
+                    onClick={(e) => { e.stopPropagation(); playQueue(queueTracks, i); }}
                     className="text-foreground hover:text-primary"
                     aria-label="Play"
                   >
@@ -149,7 +151,7 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
                     </div>
                   )}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate font-medium">{t.title}</span>
                     <SourceBadge track={t} />
