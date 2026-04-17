@@ -351,6 +351,7 @@ function PlaylistDetail() {
           onTrackRemoved={load}
         />
       )}
+      </div>
     </div>
   );
 }
