@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpotifyCallbackRouteImport } from './routes/spotify.callback'
 import { Route as ApiDebugYoutubeRouteImport } from './routes/api.debug-youtube'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppPlaylistsRouteImport } from './routes/_app/playlists'
 import { Route as AppLibraryRouteImport } from './routes/_app/library'
 import { Route as AppConnectRouteImport } from './routes/_app/connect'
@@ -43,6 +44,11 @@ const ApiDebugYoutubeRoute = ApiDebugYoutubeRouteImport.update({
   id: '/api/debug-youtube',
   path: '/api/debug-youtube',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppPlaylistsRoute = AppPlaylistsRouteImport.update({
   id: '/playlists',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/connect': typeof AppConnectRoute
   '/library': typeof AppLibraryRoute
   '/playlists': typeof AppPlaylistsRouteWithChildren
+  '/settings': typeof AppSettingsRoute
   '/api/debug-youtube': typeof ApiDebugYoutubeRoute
   '/spotify/callback': typeof SpotifyCallbackRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/connect': typeof AppConnectRoute
   '/library': typeof AppLibraryRoute
   '/playlists': typeof AppPlaylistsRouteWithChildren
+  '/settings': typeof AppSettingsRoute
   '/api/debug-youtube': typeof ApiDebugYoutubeRoute
   '/spotify/callback': typeof SpotifyCallbackRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/_app/connect': typeof AppConnectRoute
   '/_app/library': typeof AppLibraryRoute
   '/_app/playlists': typeof AppPlaylistsRouteWithChildren
+  '/_app/settings': typeof AppSettingsRoute
   '/api/debug-youtube': typeof ApiDebugYoutubeRoute
   '/spotify/callback': typeof SpotifyCallbackRoute
   '/_app/playlists/$id': typeof AppPlaylistsIdRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/connect'
     | '/library'
     | '/playlists'
+    | '/settings'
     | '/api/debug-youtube'
     | '/spotify/callback'
     | '/playlists/$id'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
     | '/connect'
     | '/library'
     | '/playlists'
+    | '/settings'
     | '/api/debug-youtube'
     | '/spotify/callback'
     | '/playlists/$id'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/_app/connect'
     | '/_app/library'
     | '/_app/playlists'
+    | '/_app/settings'
     | '/api/debug-youtube'
     | '/spotify/callback'
     | '/_app/playlists/$id'
@@ -187,6 +199,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/debug-youtube'
       preLoaderRoute: typeof ApiDebugYoutubeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/playlists': {
       id: '/_app/playlists'
@@ -242,12 +261,14 @@ interface AppRouteChildren {
   AppConnectRoute: typeof AppConnectRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppPlaylistsRoute: typeof AppPlaylistsRouteWithChildren
+  AppSettingsRoute: typeof AppSettingsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppConnectRoute: AppConnectRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppPlaylistsRoute: AppPlaylistsRouteWithChildren,
+  AppSettingsRoute: AppSettingsRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

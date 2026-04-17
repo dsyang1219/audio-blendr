@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Music, Heart, Library, LogOut, Plug } from "lucide-react";
+import { Music, Heart, Library, LogOut, Plug, Settings } from "lucide-react";
 import { Player } from "@/components/Player";
 import { Logo } from "@/components/Logo";
 
@@ -47,6 +47,7 @@ function AppLayout() {
             <NavItem to="/library" icon={<Heart className="h-4 w-4" />}>Liked Songs</NavItem>
             <NavItem to="/playlists" icon={<Library className="h-4 w-4" />}>Playlists</NavItem>
             <NavItem to="/connect" icon={<Plug className="h-4 w-4" />}>Spotify Sync</NavItem>
+            <NavItem to="/settings" icon={<Settings className="h-4 w-4" />}>Settings</NavItem>
           </nav>
 
           <div className="mt-6 border-t border-sidebar-border pt-4">
