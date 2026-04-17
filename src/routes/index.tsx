@@ -1,23 +1,15 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { useAuth } from "@/lib/auth-context";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Music, Youtube, Library, Sparkles } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/")({
   component: Landing,
 });
 
 function Landing() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && user) {
-      navigate({ to: "/library" });
-    }
-  }, [user, loading, navigate]);
+  const { user } = useAuth();
 
   return (
     <div className="relative min-h-screen overflow-hidden text-foreground">
