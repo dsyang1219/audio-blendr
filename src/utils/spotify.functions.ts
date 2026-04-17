@@ -331,13 +331,17 @@ export const addSpotifyTrackToPlaylist = createServerFn({ method: "POST" })
     return { title: data.title };
   });
 
+// Only request fields we actually store — slashes payload size dramatically and reduces 429s.
+const TRACK_FIELDS = "next,items(track(id,name,duration_ms,artists(name),album(name,images(url))))";
+const PLAYLIST_LIST_FIELDS = "next,items(id,name,description,images(url))";
+
 async function fetchAllPlaylistTracks(
   spotifyPlaylistId: string,
   accessToken: string,
   userId: string,
 ): Promise<{ rows: Array<ReturnType<typeof mapTrack> & { user_id: string; position: number; source: "spotify" }> | null; status: number }> {
   const rows: Array<ReturnType<typeof mapTrack> & { user_id: string; position: number; source: "spotify" }> = [];
-  let url: string | null = `${SPOTIFY_API}/playlists/${spotifyPlaylistId}/tracks?limit=100`;
+  let url: string | null = `${SPOTIFY_API}/playlists/${spotifyPlaylistId}/tracks?limit=100&fields=${encodeURIComponent(TRACK_FIELDS)}`;
   let position = 0;
   let pageCount = 0;
   while (url && pageCount < 10) {
@@ -353,7 +357,7 @@ async function fetchAllPlaylistTracks(
     }
     url = json.next;
     pageCount++;
-    if (url) await pause(250);
+    if (url) await pause(600);
   }
   return { rows, status: 200 };
 }
@@ -375,7 +379,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
     const alreadySynced = new Set((existing ?? []).map((p) => p.spotify_playlist_id).filter(Boolean));
 
     const playlists: { id: string; name: string; description: string | null; image: string | null }[] = [];
-    let plUrl: string | null = `${SPOTIFY_API}/me/playlists?limit=50`;
+    let plUrl: string | null = `${SPOTIFY_API}/me/playlists?limit=50&fields=${encodeURIComponent(PLAYLIST_LIST_FIELDS)}`;
     let pageCount = 0;
     let partialReason: string | null = null;
     while (plUrl && pageCount < 20) {
@@ -411,7 +415,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       }
       plUrl = json.next;
       pageCount++;
-      if (plUrl) await pause(300);
+      if (plUrl) await pause(600);
     }
 
     // Filter to only NEW playlists (incremental)
@@ -465,7 +469,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       }
       inserted++;
       totalTracks += rows.length;
-      await pause(500);
+      await pause(1000);
     }
 
     let message: string | null = null;
