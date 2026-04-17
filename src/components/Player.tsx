@@ -16,6 +16,8 @@ export function Player() {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(70);
+  const [seeking, setSeeking] = useState(false);
+  const seekValueRef = useRef<number | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const resolveYT = useServerFn(resolveYouTube);
 
@@ -84,6 +86,7 @@ export function Player() {
   useEffect(() => {
     if (!playerRef.current) return;
     const id = setInterval(() => {
+      if (seeking) return;
       try {
         const p = playerRef.current?.getCurrentTime?.() ?? 0;
         const d = playerRef.current?.getDuration?.() ?? 0;
@@ -94,7 +97,7 @@ export function Player() {
       }
     }, 500);
     return () => clearInterval(id);
-  }, [videoId]);
+  }, [videoId, seeking]);
 
   // React to isPlaying toggle
   useEffect(() => {
@@ -173,10 +176,25 @@ export function Player() {
             <Slider
               value={[duration ? (progress / duration) * 100 : 0]}
               onValueChange={(v) => {
-                if (!playerRef.current || !duration) return;
+                if (!duration) return;
+                setSeeking(true);
                 const t = (v[0] / 100) * duration;
-                playerRef.current.seekTo(t, true);
+                seekValueRef.current = t;
                 setProgress(t);
+              }}
+              onValueCommit={(v) => {
+                if (!playerRef.current || !duration) {
+                  setSeeking(false);
+                  return;
+                }
+                const t = (v[0] / 100) * duration;
+                try {
+                  playerRef.current.seekTo(t, true);
+                } catch { /* ignore */ }
+                setProgress(t);
+                seekValueRef.current = null;
+                // Allow polling to resume after the player updates internally
+                setTimeout(() => setSeeking(false), 250);
               }}
               max={100}
               step={0.5}
