@@ -357,7 +357,7 @@ async function fetchAllPlaylistTracks(
     }
     url = json.next;
     pageCount++;
-    if (url) await pause(600);
+    // No artificial pause between pages — spotifyFetch already handles 429 with backoff.
   }
   return { rows, status: 200 };
 }
@@ -415,7 +415,6 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       }
       plUrl = json.next;
       pageCount++;
-      if (plUrl) await pause(600);
     }
 
     // Filter to only NEW playlists (incremental)
@@ -435,11 +434,9 @@ export const syncPlaylists = createServerFn({ method: "POST" })
           break;
         }
         // 403 or other: skip this playlist but continue with others
-        await pause(500);
         continue;
       }
       if (rows.length === 0) {
-        await pause(250);
         continue;
       }
 
@@ -469,7 +466,6 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       }
       inserted++;
       totalTracks += rows.length;
-      await pause(1000);
     }
 
     let message: string | null = null;
