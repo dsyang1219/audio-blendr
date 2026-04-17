@@ -26,7 +26,7 @@ function AppLayout() {
     supabase
       .from("playlists")
       .select("id, name, cover_url")
-      .order("name")
+      .order("updated_at", { ascending: false })
       .then(({ data }) => setPlaylists(data ?? []));
   }, [user, location.pathname]);
 
