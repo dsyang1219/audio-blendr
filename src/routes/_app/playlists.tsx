@@ -133,7 +133,7 @@ function PlaylistsIndex() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-primary shadow-glow hover:shadow-pink hover:scale-105 transition-all">
+            <Button className="shadow-glow hover:scale-105 transition-all">
               <Plus className="mr-2 h-4 w-4" /> New Playlist
             </Button>
           </DialogTrigger>
