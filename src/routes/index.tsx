@@ -55,7 +55,7 @@ function Landing() {
 
         <section className="mx-auto mt-24 grid max-w-4xl gap-6 md:grid-cols-3">
           <FeatureCard icon={<Music className="h-6 w-6" />} title="Connect Spotify" desc="Link your Spotify account in one click to access your library." />
-          <FeatureCard icon={<Library className="h-6 w-6" />} title="Sync everything" desc="Import liked songs and playlists with track metadata and artwork." />
+          <FeatureCard icon={<Library className="h-6 w-6" />} title="Sync everything" desc="Import liked songs and playlists with just the click of a button." />
           <FeatureCard icon={<Youtube className="h-6 w-6" />} title="Play via YouTube" desc="Stream every song from YouTube — no Spotify Premium required." />
         </section>
       </main>
