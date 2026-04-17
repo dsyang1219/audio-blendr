@@ -4,7 +4,8 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Music, Heart, Library, LogOut, Plug, Settings } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Music, Heart, Library, LogOut, Plug, Settings, Menu } from "lucide-react";
 import { Player } from "@/components/Player";
 import { Logo } from "@/components/Logo";
 
