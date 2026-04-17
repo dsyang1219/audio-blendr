@@ -19,7 +19,7 @@ interface SpotifyResult {
 }
 
 interface AddSongDialogProps {
-  playlistId: string;
+  playlistId?: string;
   onAdded?: () => void;
   trigger?: React.ReactNode;
 }
@@ -41,6 +41,8 @@ export function AddSongDialog({ playlistId, onAdded, trigger }: AddSongDialogPro
   const search = useServerFn(searchSpotifyTracks);
   const addSpotify = useServerFn(addSpotifyTrackToPlaylist);
   const addYT = useServerFn(addYouTubeVideo);
+
+  const destinationLabel = playlistId ? "playlist" : "Liked Songs";
 
   const runSearch = async () => {
     if (!query.trim()) return;
@@ -94,7 +96,7 @@ export function AddSongDialog({ playlistId, onAdded, trigger }: AddSongDialogPro
       </DialogTrigger>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Add a song to this playlist</DialogTitle>
+          <DialogTitle>Add a song to {destinationLabel}</DialogTitle>
         </DialogHeader>
         <Tabs value={tab} onValueChange={(v) => setTab(v as "spotify" | "youtube")}>
           <TabsList className="grid w-full grid-cols-2">
