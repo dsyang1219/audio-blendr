@@ -192,7 +192,10 @@ function PlaylistDetail() {
   if (!playlist) return <div className="p-8 text-muted-foreground">Playlist not found</div>;
 
   const isCustom = playlist.source === "custom";
+  const isYouTube = playlist.source === "youtube";
   const isSpotifyLinked = playlist.source === "spotify" && !!playlist.spotify_playlist_id;
+  // Custom and YouTube-imported playlists are user-owned and fully editable.
+  const isEditable = isCustom || isYouTube;
 
   // Neutral hero background — no gradient
   const heroGradient = "bg-secondary";
