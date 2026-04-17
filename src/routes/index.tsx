@@ -46,7 +46,7 @@ function Landing() {
           </p>
           <div className="mt-10 flex justify-center gap-3">
             <Link to={ctaTo}>
-              <Button size="lg" className="bg-gradient-primary text-base shadow-glow hover:shadow-pink hover:scale-105 transition-all">
+              <Button size="lg" className="text-base shadow-glow hover:scale-105 transition-all">
                 {user ? "Open your library" : "Get started — it's free"}
               </Button>
             </Link>
