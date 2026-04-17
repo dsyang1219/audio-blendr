@@ -105,6 +105,7 @@ function PlaylistDetail() {
   if (!playlist) return <div className="p-8 text-muted-foreground">Playlist not found</div>;
 
   const isCustom = playlist.source === "custom";
+  const isSpotifyLinked = playlist.source === "spotify" && !!playlist.spotify_playlist_id;
 
   return (
     <div className="p-8">
@@ -120,7 +121,7 @@ function PlaylistDetail() {
         </div>
         <div className="flex-1">
           <p className="text-xs font-bold uppercase">
-            {isCustom ? "Custom Playlist" : playlist.source === "youtube" ? "YouTube Playlist" : "Playlist"}
+            {isCustom ? "Custom Playlist" : playlist.source === "youtube" ? "YouTube Playlist" : "Spotify Playlist"}
           </p>
           <h1 className="mt-2 text-5xl font-bold">{playlist.name}</h1>
           {playlist.description && <p className="mt-2 text-muted-foreground">{playlist.description}</p>}
@@ -138,6 +139,12 @@ function PlaylistDetail() {
           <Shuffle className="h-5 w-5" /> Shuffle
         </Button>
         <AddSongDialog playlistId={id} onAdded={load} />
+        {isSpotifyLinked && (
+          <Button onClick={handleSyncFromSpotify} disabled={syncing} size="lg" variant="outline" className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+            {tracks.length === 0 ? "Sync from Spotify" : "Re-sync from Spotify"}
+          </Button>
+        )}
         {isCustom && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -163,7 +170,9 @@ function PlaylistDetail() {
 
       {tracks.length === 0 ? (
         <p className="text-muted-foreground">
-          No tracks yet. Click "Add song" above to add from Spotify or YouTube.
+          {isSpotifyLinked
+            ? 'No tracks yet. Click "Sync from Spotify" above to import this playlist\'s tracks.'
+            : 'No tracks yet. Click "Add song" above to add from Spotify or YouTube.'}
         </p>
       ) : (
         <TrackList
