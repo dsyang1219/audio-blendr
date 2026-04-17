@@ -66,6 +66,74 @@ export function buildYouTubeQuery(artist: string, title: string): string {
   return `${artist} - ${cleanTitle}`;
 }
 
+export interface YouTubeVideoMeta {
+  videoId: string;
+  title: string;
+  channel: string;
+  thumbnail: string | null;
+  durationSeconds: number | null;
+}
+
+/**
+ * Parses an ISO 8601 duration (e.g. "PT3M42S") into seconds.
+ */
+function parseIsoDuration(iso: string): number | null {
+  const match = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso);
+  if (!match) return null;
+  const [, h, m, s] = match;
+  return (Number(h ?? 0) * 3600) + (Number(m ?? 0) * 60) + Number(s ?? 0);
+}
+
+/**
+ * Fetch full metadata for up to 50 YouTube video IDs in ONE API call (1 quota unit).
+ */
+export async function fetchYouTubeVideoMetadata(videoIds: string[]): Promise<Map<string, YouTubeVideoMeta>> {
+  const result = new Map<string, YouTubeVideoMeta>();
+  if (videoIds.length === 0) return result;
+
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) throw new Error("YouTube not configured");
+
+  // YouTube videos.list accepts up to 50 IDs per call
+  for (let i = 0; i < videoIds.length; i += 50) {
+    const chunk = videoIds.slice(i, i + 50);
+    const url = new URL("https://www.googleapis.com/youtube/v3/videos");
+    url.searchParams.set("part", "snippet,contentDetails");
+    url.searchParams.set("id", chunk.join(","));
+    url.searchParams.set("key", apiKey);
+
+    const res = await fetch(url.toString());
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`[youtube] videos.list HTTP ${res.status}:`, body);
+      if (res.status === 403 && /quota/i.test(body)) throw new YouTubeQuotaError();
+      continue;
+    }
+
+    const json = (await res.json()) as {
+      items?: Array<{
+        id: string;
+        snippet: { title: string; channelTitle: string; thumbnails?: Record<string, { url: string }> };
+        contentDetails: { duration: string };
+      }>;
+    };
+
+    for (const item of json.items ?? []) {
+      const thumbs = item.snippet.thumbnails;
+      const thumbnail = thumbs?.high?.url ?? thumbs?.medium?.url ?? thumbs?.default?.url ?? null;
+      result.set(item.id, {
+        videoId: item.id,
+        title: item.snippet.title,
+        channel: item.snippet.channelTitle,
+        thumbnail,
+        durationSeconds: parseIsoDuration(item.contentDetails.duration),
+      });
+    }
+  }
+
+  return result;
+}
+
 export async function findTrackRow(
   supabase: DB,
   table: TrackTable,
