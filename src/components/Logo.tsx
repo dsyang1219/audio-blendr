@@ -16,11 +16,11 @@ export function LogoMark({ className }: { className?: string }) {
       <defs>
         <linearGradient id="ab-grad-a" x1="0" y1="20" x2="40" y2="20" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="oklch(0.78 0.18 150)" />
-          <stop offset="100%" stopColor="oklch(0.62 0.18 150)" />
+          <stop offset="100%" stopColor="oklch(0.7 0.19 150)" />
         </linearGradient>
         <linearGradient id="ab-grad-b" x1="0" y1="20" x2="40" y2="20" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="oklch(0.62 0.18 150)" />
-          <stop offset="100%" stopColor="oklch(0.62 0.24 27)" />
+          <stop offset="0%" stopColor="oklch(0.62 0.2 80)" />
+          <stop offset="100%" stopColor="oklch(0.5 0.22 25)" />
         </linearGradient>
       </defs>
       {/* Left wave bars — green side of the blend */}
