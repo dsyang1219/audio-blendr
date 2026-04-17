@@ -14,20 +14,20 @@ export function LogoMark({ className }: { className?: string }) {
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id="ab-grad-a" x1="0" y1="0" x2="0" y2="40" gradientUnits="userSpaceOnUse">
+        <linearGradient id="ab-grad-a" x1="0" y1="20" x2="40" y2="20" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="oklch(0.78 0.18 150)" />
           <stop offset="100%" stopColor="oklch(0.62 0.18 150)" />
         </linearGradient>
-        <linearGradient id="ab-grad-b" x1="0" y1="0" x2="0" y2="40" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="oklch(0.7 0.22 27)" />
-          <stop offset="100%" stopColor="oklch(0.6 0.24 27)" />
+        <linearGradient id="ab-grad-b" x1="0" y1="20" x2="40" y2="20" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="oklch(0.62 0.18 150)" />
+          <stop offset="100%" stopColor="oklch(0.62 0.24 27)" />
         </linearGradient>
       </defs>
-      {/* Left wave bars — Spotify green */}
+      {/* Left wave bars — green side of the blend */}
       <rect x="6"  y="16" width="3" height="8"  rx="1.5" fill="url(#ab-grad-a)" />
       <rect x="11" y="11" width="3" height="18" rx="1.5" fill="url(#ab-grad-a)" />
       <rect x="16" y="6"  width="3" height="28" rx="1.5" fill="url(#ab-grad-a)" />
-      {/* Right wave bars — YouTube red */}
+      {/* Right wave bars — green→red blend */}
       <rect x="21" y="6"  width="3" height="28" rx="1.5" fill="url(#ab-grad-b)" />
       <rect x="26" y="11" width="3" height="18" rx="1.5" fill="url(#ab-grad-b)" />
       <rect x="31" y="16" width="3" height="8"  rx="1.5" fill="url(#ab-grad-b)" />
