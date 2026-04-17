@@ -97,7 +97,6 @@ function ConnectPage() {
     try {
       const r = await syncLikedFn();
       toast.success(`Synced ${r.count} liked songs`);
-      void runBatchResolve(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to sync");
     }
@@ -122,7 +121,6 @@ function ConnectPage() {
         const skippedNote = r.skipped ? ` (skipped ${r.skipped} already-synced)` : "";
         toast.success(`Synced ${r.playlists} new playlists, ${r.tracks} tracks${skippedNote}`);
       }
-      void runBatchResolve(true);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to sync");
     }

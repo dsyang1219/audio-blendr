@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireServerFnAuth } from "@/utils/server-fn-auth";
 import { createSpotifyState, getSpotifyRedirectUri, parseSpotifyState } from "@/utils/spotify-auth";
-import { searchYouTubeOnce } from "@/utils/youtube.server";
 
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
@@ -300,23 +299,8 @@ export const addSpotifyTrackToPlaylist = createServerFn({ method: "POST" })
     const userId = context.userId;
     const supabase = context.supabase;
 
-    // Pre-resolve a YouTube video ID once at insert time so playback never
-    // has to look it up again. Best-effort: if it fails, we still save the track.
-    let youtubeVideoId: string | null = null;
-    try {
-      const cleanTitle = data.title.replace(/\s*[-(].*?(remaster|remix|version|feat\.?|ft\.?).*?[)]?$/i, "").trim();
-      const queries = [
-        `${data.artist} - ${cleanTitle}`,
-        `${data.artist} ${cleanTitle} audio`,
-        `${data.artist} ${data.title}`,
-      ];
-      for (const q of queries) {
-        youtubeVideoId = await searchYouTubeOnce(q);
-        if (youtubeVideoId) break;
-      }
-    } catch (e) {
-      console.warn("[addSpotifyTrack] YouTube pre-resolve failed", e);
-    }
+    // YouTube ID is resolved lazily at playback time (see Player + resolveYouTube).
+    const youtubeVideoId: string | null = null;
 
     if (data.playlistId) {
       const { data: pl } = await supabase
@@ -603,25 +587,8 @@ export const addExistingTrackToPlaylist = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!pl || pl.user_id !== userId) throw new Error("Playlist not found");
 
-    // If we don't already have a YT video id, resolve it once now so playback
-    // never has to look it up again.
-    let youtubeVideoId = data.youtube_video_id;
-    if (!youtubeVideoId) {
-      try {
-        const cleanTitle = data.title.replace(/\s*[-(].*?(remaster|remix|version|feat\.?|ft\.?).*?[)]?$/i, "").trim();
-        const queries = [
-          `${data.artist} - ${cleanTitle}`,
-          `${data.artist} ${cleanTitle} audio`,
-          `${data.artist} ${data.title}`,
-        ];
-        for (const q of queries) {
-          youtubeVideoId = await searchYouTubeOnce(q);
-          if (youtubeVideoId) break;
-        }
-      } catch (e) {
-        console.warn("[addExistingTrack] YouTube pre-resolve failed", e);
-      }
-    }
+    // YouTube ID is resolved lazily at playback time.
+    const youtubeVideoId = data.youtube_video_id;
 
     const { count } = await supabase
       .from("playlist_tracks")
