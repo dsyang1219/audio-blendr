@@ -456,10 +456,11 @@ export const syncPlaylists = createServerFn({ method: "POST" })
     const allNewPlaylists = playlists.filter((p) => !alreadySynced.has(p.id));
     const skippedCount = playlists.length - allNewPlaylists.length;
 
-    // Process a larger batch per request, but fetch playlist tracks in parallel
-    // (Spotify's per-playlist endpoint is fast; the bottleneck was sequential fetching).
-    const BATCH_SIZE = 15;
-    const CONCURRENCY = 4;
+    // Process playlists serially with a small delay between requests.
+    // Concurrent fetches were the main cause of 429s — Spotify rate-limits
+    // per-app aggressively. Serial + gentle pacing is far more reliable.
+    const BATCH_SIZE = 8;
+    const REQUEST_GAP_MS = 250;
     const newPlaylists = allNewPlaylists.slice(0, BATCH_SIZE);
     const remaining = allNewPlaylists.length - newPlaylists.length;
 
@@ -467,54 +468,49 @@ export const syncPlaylists = createServerFn({ method: "POST" })
     let totalTracks = 0;
     let rateLimitedAny = false;
 
-    // Run fetches in parallel chunks
-    for (let i = 0; i < newPlaylists.length; i += CONCURRENCY) {
-      const chunk = newPlaylists.slice(i, i + CONCURRENCY);
-      const results = await Promise.all(
-        chunk.map(async (p) => ({ p, ...(await fetchAllPlaylistTracks(p.id, accessToken, userId)) })),
-      );
+    for (let i = 0; i < newPlaylists.length; i++) {
+      const p = newPlaylists[i];
+      const { rows, status } = await fetchAllPlaylistTracks(p.id, accessToken, userId);
 
-      for (const { p, rows, status } of results) {
-        if (!rows) {
-          if (status === 429) {
-            rateLimitedAny = true;
-            continue;
-          }
-          // 403 or other: skip this playlist but continue with others
-          continue;
+      if (!rows) {
+        if (status === 429) {
+          rateLimitedAny = true;
+          break;
         }
-        if (rows.length === 0) continue;
+        // 403 or other: skip this playlist but continue with others
+        continue;
+      }
+      if (rows.length === 0) continue;
 
-        const { data: pl, error: plErr } = await supabase
-          .from("playlists")
-          .insert({
-            user_id: userId,
-            name: p.name,
-            description: p.description,
-            cover_url: p.image,
-            source: "spotify",
-            spotify_playlist_id: p.id,
-          })
-          .select("id")
-          .single();
-        if (plErr || !pl) {
-          console.error("Insert playlist failed", plErr);
-          continue;
-        }
-
-        const tracksWithPlaylist = rows.map((row) => ({ ...row, playlist_id: pl.id }));
-        const { error: insErr } = await supabase.from("playlist_tracks").insert(tracksWithPlaylist);
-        if (insErr) {
-          console.error("Insert playlist tracks failed", p.name, insErr);
-          await supabase.from("playlists").delete().eq("id", pl.id);
-          continue;
-        }
-        inserted++;
-        totalTracks += rows.length;
+      const { data: pl, error: plErr } = await supabase
+        .from("playlists")
+        .insert({
+          user_id: userId,
+          name: p.name,
+          description: p.description,
+          cover_url: p.image,
+          source: "spotify",
+          spotify_playlist_id: p.id,
+        })
+        .select("id")
+        .single();
+      if (plErr || !pl) {
+        console.error("Insert playlist failed", plErr);
+        continue;
       }
 
-      // If we're getting rate-limited, stop early so user can retry
-      if (rateLimitedAny) break;
+      const tracksWithPlaylist = rows.map((row) => ({ ...row, playlist_id: pl.id }));
+      const { error: insErr } = await supabase.from("playlist_tracks").insert(tracksWithPlaylist);
+      if (insErr) {
+        console.error("Insert playlist tracks failed", p.name, insErr);
+        await supabase.from("playlists").delete().eq("id", pl.id);
+        continue;
+      }
+      inserted++;
+      totalTracks += rows.length;
+
+      // Gentle pacing between playlists to avoid bursting Spotify
+      if (i < newPlaylists.length - 1) await wait(REQUEST_GAP_MS);
     }
 
     const stillRemaining = remaining + (rateLimitedAny ? newPlaylists.length - inserted : 0);
