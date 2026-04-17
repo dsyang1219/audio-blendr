@@ -380,9 +380,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
     }[] = [];
 
     for (const p of playlists) {
-      const tRes = await fetch(`${SPOTIFY_API}/playlists/${p.id}/tracks?limit=100`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const tRes = await spotifyFetch(`${SPOTIFY_API}/playlists/${p.id}/tracks?limit=100`, accessToken);
       if (!tRes.ok) {
         console.error("Fetch playlist tracks failed", p.id, tRes.status, await tRes.text());
         continue;
