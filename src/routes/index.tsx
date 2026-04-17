@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Music, Youtube, Library, Sparkles } from "lucide-react";
+import { Music, Youtube, Library, Bird } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 
@@ -34,7 +34,7 @@ function Landing() {
       <main className="container mx-auto px-6 py-20">
         <section className="mx-auto max-w-3xl text-center animate-fade-in">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <Bird className="h-3.5 w-3.5 text-primary" />
             Built for music lovers, free forever
           </div>
           <h2 className="text-5xl font-bold tracking-tight md:text-7xl">
