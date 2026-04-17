@@ -123,21 +123,24 @@ export function Player() {
   };
 
   return (
-    <footer className="border-t border-border bg-sidebar px-4 py-3">
+    <footer className="border-t border-border bg-sidebar/90 backdrop-blur-xl px-4 py-3 shadow-elegant">
       <div className="grid grid-cols-3 items-center gap-4">
         {/* Left: now playing */}
         <div className="flex min-w-0 items-center gap-3">
-          <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded bg-muted">
+          <div className={cn(
+            "h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-muted shadow-elegant transition-transform",
+            isPlaying && "animate-float"
+          )}>
             {current?.album_art_url ? (
               <img src={current.album_art_url} alt="" className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <Music className="h-5 w-5 text-muted-foreground" />
+              <div className="flex h-full w-full items-center justify-center bg-gradient-violet">
+                <Music className="h-6 w-6 text-primary-foreground" />
               </div>
             )}
           </div>
           <div className="min-w-0">
-            <div className="truncate text-sm font-medium">{current?.title ?? "Nothing playing"}</div>
+            <div className="truncate text-sm font-semibold">{current?.title ?? "Nothing playing"}</div>
             <div className="truncate text-xs text-muted-foreground">{current?.artist ?? "Pick a song from your library"}</div>
           </div>
         </div>
@@ -162,7 +165,10 @@ export function Player() {
             <button
               onClick={() => setIsPlaying(!isPlaying)}
               disabled={!current}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:scale-105 disabled:opacity-40"
+              className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground shadow-glow transition-all hover:scale-110 active:scale-95 disabled:opacity-40 disabled:hover:scale-100",
+                isPlaying && "animate-pulse-glow"
+              )}
               aria-label={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
