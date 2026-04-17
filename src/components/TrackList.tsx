@@ -153,8 +153,8 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="truncate font-medium">{t.title}</span>
-                    <SourceBadge track={t} />
+                    <span className="font-medium break-words line-clamp-2 md:truncate md:line-clamp-none">{t.title}</span>
+                    <span className="hidden md:inline-flex"><SourceBadge track={t} /></span>
                   </div>
                   <div className="truncate text-xs text-muted-foreground">{t.artist}</div>
                 </div>
