@@ -11,13 +11,13 @@ export const resolveYouTube = createServerFn({ method: "POST" })
 
     const row = await findTrackRow(supabase, data.table, userId, data.trackId, data.title, data.artist);
     if (!row) {
-      console.error("[youtube] Track lookup failed", {
+      console.warn("[youtube] Track lookup failed", {
         table: data.table,
         trackId: data.trackId,
         title: data.title,
         artist: data.artist,
       });
-      throw new Error("Track not found");
+      return { videoId: null };
     }
 
     if (row.youtube_video_id) return { videoId: row.youtube_video_id };
