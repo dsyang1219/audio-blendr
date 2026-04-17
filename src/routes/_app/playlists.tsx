@@ -35,8 +35,8 @@ function PlaylistsIndex() {
   const load = () => {
     supabase
       .from("playlists")
-      .select("id, name, description, cover_url, source")
-      .order("name")
+      .select("id, name, description, cover_url, source, updated_at")
+      .order("updated_at", { ascending: false })
       .then(({ data }) => {
         setPlaylists((data ?? []) as PL[]);
         setLoading(false);
