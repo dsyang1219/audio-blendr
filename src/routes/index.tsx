@@ -21,11 +21,11 @@ function Landing() {
         </Link>
         <div className="flex gap-2">
           {user ? (
-            <Link to="/library"><Button variant="ghost">Open library</Button></Link>
+            <Link to="/library"><Button variant="secondary">Open library</Button></Link>
           ) : (
             <>
               <Link to="/auth"><Button variant="ghost">Sign in</Button></Link>
-              <Link to="/auth"><Button className="bg-gradient-primary shadow-glow hover:shadow-pink hover:scale-105 transition-all">Get started</Button></Link>
+              <Link to="/auth"><Button className="shadow-glow hover:scale-105 transition-all">Get started</Button></Link>
             </>
           )}
         </div>
@@ -54,19 +54,19 @@ function Landing() {
         </section>
 
         <section className="mx-auto mt-24 grid max-w-4xl gap-6 md:grid-cols-3">
-          <FeatureCard gradient="bg-gradient-primary" icon={<Music className="h-6 w-6" />} title="Connect Spotify" desc="Link your Spotify account in one click to access your library." />
-          <FeatureCard gradient="bg-gradient-violet" icon={<Library className="h-6 w-6" />} title="Sync everything" desc="Import liked songs and playlists with track metadata and artwork." />
-          <FeatureCard gradient="bg-gradient-sunset" icon={<Youtube className="h-6 w-6" />} title="Play via YouTube" desc="Stream every song from YouTube — no Spotify Premium required." />
+          <FeatureCard icon={<Music className="h-6 w-6" />} title="Connect Spotify" desc="Link your Spotify account in one click to access your library." />
+          <FeatureCard icon={<Library className="h-6 w-6" />} title="Sync everything" desc="Import liked songs and playlists with track metadata and artwork." />
+          <FeatureCard icon={<Youtube className="h-6 w-6" />} title="Play via YouTube" desc="Stream every song from YouTube — no Spotify Premium required." />
         </section>
       </main>
     </div>
   );
 }
 
-function FeatureCard({ icon, title, desc, gradient }: { icon: React.ReactNode; title: string; desc: string; gradient: string }) {
+function FeatureCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
     <div className="hover-lift glass rounded-2xl p-6 animate-scale-in">
-      <div className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl ${gradient} text-primary-foreground shadow-glow`}>
+      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow">
         {icon}
       </div>
       <h3 className="text-lg font-semibold">{title}</h3>
