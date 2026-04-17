@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireServerFnAuth } from "@/utils/server-fn-auth";
 
 function extractVideoId(url: string): string | null {
   try {
@@ -24,21 +24,27 @@ function extractPlaylistId(url: string): string | null {
     const u = new URL(url);
     const list = u.searchParams.get("list");
     if (list) return list;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   if (/^PL[a-zA-Z0-9_-]+$/.test(url) || /^[a-zA-Z0-9_-]{13,}$/.test(url)) return url;
   return null;
 }
 
 interface YTVideoMeta {
   id: string;
-  snippet: { title: string; channelTitle: string; thumbnails: { medium?: { url: string }; high?: { url: string } } };
+  snippet: {
+    title: string;
+    channelTitle: string;
+    thumbnails: { medium?: { url: string }; high?: { url: string } };
+  };
   contentDetails: { duration: string };
 }
 
 function parseISODuration(iso: string): number {
   const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!m) return 0;
-  return (Number(m[1] || 0) * 3600) + (Number(m[2] || 0) * 60) + Number(m[3] || 0);
+  return Number(m[1] || 0) * 3600 + Number(m[2] || 0) * 60 + Number(m[3] || 0);
 }
 
 async function fetchVideoMeta(videoIds: string[]): Promise<YTVideoMeta[]> {
@@ -54,7 +60,7 @@ async function fetchVideoMeta(videoIds: string[]): Promise<YTVideoMeta[]> {
 }
 
 export const addYouTubeVideo = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireServerFnAuth])
   .inputValidator((d: { url: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
@@ -92,7 +98,7 @@ interface YTPlaylistItem {
 }
 
 export const importYouTubePlaylist = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireServerFnAuth])
   .inputValidator((d: { url: string; name?: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
@@ -104,18 +110,25 @@ export const importYouTubePlaylist = createServerFn({ method: "POST" })
     let cover: string | null = null;
     try {
       const plRes = await fetch(
-        `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${apiKey}`
+        `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${apiKey}`,
       );
       if (plRes.ok) {
         const plJson = (await plRes.json()) as {
-          items: { snippet: { title: string; thumbnails: { high?: { url: string }; medium?: { url: string } } } }[];
+          items: {
+            snippet: { title: string; thumbnails: { high?: { url: string }; medium?: { url: string } } };
+          }[];
         };
         if (plJson.items[0]) {
           if (!data.name) playlistName = plJson.items[0].snippet.title;
-          cover = plJson.items[0].snippet.thumbnails?.high?.url ?? plJson.items[0].snippet.thumbnails?.medium?.url ?? null;
+          cover =
+            plJson.items[0].snippet.thumbnails?.high?.url ??
+            plJson.items[0].snippet.thumbnails?.medium?.url ??
+            null;
         }
       }
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
 
     const videoIds: string[] = [];
     let pageToken: string | undefined;

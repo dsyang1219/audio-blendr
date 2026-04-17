@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireServerFnAuth } from "@/utils/server-fn-auth";
 
 interface YTSearchItem {
   id: { videoId?: string };
@@ -82,7 +82,7 @@ async function findTrackRow(
 }
 
 export const resolveYouTube = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireServerFnAuth])
   .inputValidator((d: { table: TrackTable; trackId: string; title?: string; artist?: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
