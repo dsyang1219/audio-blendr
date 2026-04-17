@@ -199,24 +199,24 @@ function PlaylistDetail() {
 
   return (
     <div className="animate-fade-in">
-      <div className={`relative ${heroGradient} px-8 pb-10 pt-16`}>
+      <div className={`relative ${heroGradient} px-4 pb-10 pt-12 md:px-8 md:pt-16`}>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
         <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-end">
-          <div className="h-52 w-52 flex-shrink-0 overflow-hidden rounded-2xl bg-muted shadow-elegant ring-1 ring-white/10">
+          <div className="h-40 w-40 md:h-52 md:w-52 flex-shrink-0 overflow-hidden rounded-2xl bg-muted shadow-elegant ring-1 ring-white/10">
             {playlist.cover_url ? (
               <img src={playlist.cover_url} alt={playlist.name} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-background/30">
-                <Music className="h-20 w-20 text-primary-foreground/80" />
+                <Music className="h-16 w-16 md:h-20 md:w-20 text-primary-foreground/80" />
               </div>
             )}
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/90">
               {isCustom ? "Custom Playlist" : playlist.source === "youtube" ? "YouTube Playlist" : "Spotify Playlist"}
             </p>
-            <h1 className="mt-2 text-5xl font-bold tracking-tight md:text-6xl">{playlist.name}</h1>
-            {playlist.description && <p className="mt-3 max-w-2xl text-primary-foreground/90">{playlist.description}</p>}
+            <h1 className="mt-2 text-4xl md:text-6xl font-bold tracking-tight break-words">{playlist.name}</h1>
+            {playlist.description && <p className="mt-3 max-w-2xl text-sm md:text-base text-primary-foreground/90">{playlist.description}</p>}
             <p className="mt-4 text-sm font-medium text-primary-foreground/90">
               {tracks.length} {tracks.length === 1 ? "song" : "songs"}
             </p>
@@ -224,7 +224,7 @@ function PlaylistDetail() {
         </div>
       </div>
 
-      <div className="px-8 pt-2">
+      <div className="px-4 pb-8 pt-2 md:px-8">
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Button onClick={handlePlayAll} disabled={tracks.length === 0} size="lg" className="gap-2 shadow-glow hover:scale-105 transition-all">
           <Play className="h-5 w-5 fill-current" /> Play
