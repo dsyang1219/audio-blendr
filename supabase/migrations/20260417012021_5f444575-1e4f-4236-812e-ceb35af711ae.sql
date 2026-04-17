@@ -1,0 +1,2 @@
+ALTER TABLE public.playlists ADD COLUMN IF NOT EXISTS spotify_playlist_id text;
+CREATE INDEX IF NOT EXISTS idx_playlists_user_spotify ON public.playlists(user_id, spotify_playlist_id) WHERE spotify_playlist_id IS NOT NULL;
