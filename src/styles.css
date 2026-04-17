@@ -66,7 +66,7 @@
   --muted-foreground: oklch(0.78 0.01 160);
   --accent: oklch(0.31 0.02 160);
   --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.62 0.24 27);
+  --destructive: oklch(0.5 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(0.31 0.015 160);
   --input: oklch(0.29 0.015 160);
@@ -80,16 +80,16 @@
   --sidebar-border: oklch(0.24 0.015 160);
   --sidebar-ring: oklch(0.62 0.18 150);
 
-  /* Single shared gradient — green → red, used as a feature accent (not everywhere) */
-  --gradient-primary: linear-gradient(135deg, oklch(0.7 0.19 150), oklch(0.62 0.24 27));
-  --gradient-violet: linear-gradient(135deg, oklch(0.7 0.19 150), oklch(0.62 0.24 27));
-  --gradient-cyan: linear-gradient(135deg, oklch(0.7 0.19 150), oklch(0.62 0.24 27));
-  --gradient-sunset: linear-gradient(135deg, oklch(0.7 0.19 150), oklch(0.62 0.24 27));
+  /* Green → darker red, with a fast transition between the two colors */
+  --gradient-primary: linear-gradient(135deg, oklch(0.7 0.19 150) 0%, oklch(0.7 0.19 150) 35%, oklch(0.5 0.22 25) 65%, oklch(0.5 0.22 25) 100%);
+  --gradient-violet: linear-gradient(135deg, oklch(0.7 0.19 150) 0%, oklch(0.7 0.19 150) 35%, oklch(0.5 0.22 25) 65%, oklch(0.5 0.22 25) 100%);
+  --gradient-cyan: linear-gradient(135deg, oklch(0.7 0.19 150) 0%, oklch(0.7 0.19 150) 35%, oklch(0.5 0.22 25) 65%, oklch(0.5 0.22 25) 100%);
+  --gradient-sunset: linear-gradient(135deg, oklch(0.7 0.19 150) 0%, oklch(0.7 0.19 150) 35%, oklch(0.5 0.22 25) 65%, oklch(0.5 0.22 25) 100%);
   /* Subtle ambient mesh — kept low opacity so it doesn't dominate */
   --gradient-mesh: radial-gradient(at 15% 0%, oklch(0.62 0.18 150 / 0.12) 0px, transparent 55%),
-                   radial-gradient(at 85% 90%, oklch(0.62 0.24 27 / 0.1) 0px, transparent 55%);
+                   radial-gradient(at 85% 90%, oklch(0.5 0.22 25 / 0.1) 0px, transparent 55%);
   --shadow-glow: 0 8px 30px -12px oklch(0.62 0.18 150 / 0.45);
-  --shadow-pink: 0 8px 30px -12px oklch(0.62 0.24 27 / 0.45);
+  --shadow-pink: 0 8px 30px -12px oklch(0.5 0.22 25 / 0.45);
   --shadow-elegant: 0 20px 50px -20px oklch(0.05 0 0 / 0.6);
 }
 
@@ -197,9 +197,9 @@
   animation: gradient-shift 8s ease infinite;
 }
 
-/* Text gradient skips the dark midpoint so headings stay readable */
+/* Text gradient — fast green→red transition, no dark midpoint */
 .text-gradient {
-  background: linear-gradient(135deg, oklch(0.78 0.18 150), oklch(0.7 0.22 27));
+  background: linear-gradient(135deg, oklch(0.78 0.18 150) 0%, oklch(0.78 0.18 150) 35%, oklch(0.55 0.22 25) 65%, oklch(0.55 0.22 25) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
