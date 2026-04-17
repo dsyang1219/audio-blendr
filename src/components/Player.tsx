@@ -134,8 +134,8 @@ export function Player() {
             {current?.album_art_url ? (
               <img src={current.album_art_url} alt="" className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-primary">
-                <Music className="h-6 w-6 text-primary-foreground" />
+              <div className="flex h-full w-full items-center justify-center bg-secondary">
+                <Music className="h-6 w-6 text-secondary-foreground" />
               </div>
             )}
           </div>

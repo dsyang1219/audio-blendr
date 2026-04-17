@@ -69,8 +69,8 @@ function AppLayout() {
                       {p.cover_url ? (
                         <img src={p.cover_url} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-primary">
-                          <Music className="h-3 w-3 text-primary-foreground" />
+                        <div className="flex h-full w-full items-center justify-center bg-secondary">
+                          <Music className="h-3 w-3 text-secondary-foreground" />
                         </div>
                       )}
                     </div>
@@ -108,7 +108,7 @@ function NavItem({ to, icon, children }: { to: string; icon: React.ReactNode; ch
   return (
     <Link
       to={to}
-      activeProps={{ className: "bg-primary text-primary-foreground shadow-glow" }}
+      activeProps={{ className: "bg-secondary text-secondary-foreground" }}
       className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-foreground"
     >
       {icon}
