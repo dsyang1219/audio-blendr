@@ -2,4 +2,4 @@
 
 ## Core
 App name is "Audio Blendr" (not Tunemix). Use this name in all UI copy and metadata.
-Theme is a green→red gradient palette: primary green (oklch(0.72 0.2 145)) flowing through amber to red. Defined in src/styles.css.
+Theme is a single straight gradient from Spotify green (oklch(0.72 0.19 150)) to YouTube red (oklch(0.62 0.24 27)) on a neutral dark base. No orange/amber/violet/pink/blue accents. All gradient tokens use this same two-stop gradient.
