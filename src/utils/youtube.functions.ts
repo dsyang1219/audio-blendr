@@ -90,8 +90,9 @@ export const resolveYouTube = createServerFn({ method: "POST" })
   .inputValidator((d: { table: TrackTable; trackId: string; title?: string; artist?: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
+    const supabase = context.supabase as DB;
 
-    const row = await findTrackRow(data.table, userId, data.trackId, data.title, data.artist);
+    const row = await findTrackRow(supabase, data.table, userId, data.trackId, data.title, data.artist);
     if (!row) {
       console.error("[youtube] Track lookup failed", {
         table: data.table,
