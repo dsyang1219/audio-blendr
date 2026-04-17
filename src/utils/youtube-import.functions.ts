@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireServerFnAuth } from "@/utils/server-fn-auth";
 
 function extractVideoId(url: string): string | null {
@@ -64,6 +63,7 @@ export const addYouTubeVideo = createServerFn({ method: "POST" })
   .inputValidator((d: { url: string; playlistId?: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
+    const supabase = context.supabase;
     const videoId = extractVideoId(data.url.trim());
     if (!videoId) throw new Error("Invalid YouTube URL");
 
@@ -78,19 +78,19 @@ export const addYouTubeVideo = createServerFn({ method: "POST" })
 
     if (data.playlistId) {
       // Verify the playlist belongs to this user
-      const { data: pl } = await supabaseAdmin
+      const { data: pl } = await supabase
         .from("playlists")
         .select("id, user_id")
         .eq("id", data.playlistId)
         .maybeSingle();
       if (!pl || pl.user_id !== userId) throw new Error("Playlist not found");
 
-      const { count } = await supabaseAdmin
+      const { count } = await supabase
         .from("playlist_tracks")
         .select("id", { count: "exact", head: true })
         .eq("playlist_id", data.playlistId);
 
-      const { error } = await supabaseAdmin.from("playlist_tracks").insert({
+      const { error } = await supabase.from("playlist_tracks").insert({
         user_id: userId,
         playlist_id: data.playlistId,
         title,
@@ -109,7 +109,7 @@ export const addYouTubeVideo = createServerFn({ method: "POST" })
       return { title, videoId: v.id };
     }
 
-    const { error } = await supabaseAdmin.from("liked_tracks").insert({
+    const { error } = await supabase.from("liked_tracks").insert({
       user_id: userId,
       title,
       artist,
@@ -135,6 +135,7 @@ export const importYouTubePlaylist = createServerFn({ method: "POST" })
   .inputValidator((d: { url: string; name?: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
+    const supabase = context.supabase;
     const apiKey = process.env.YOUTUBE_API_KEY!;
     const playlistId = extractPlaylistId(data.url.trim());
     if (!playlistId) throw new Error("Invalid YouTube playlist URL");
@@ -195,7 +196,7 @@ export const importYouTubePlaylist = createServerFn({ method: "POST" })
       allMeta.push(...meta);
     }
 
-    const { data: pl, error: plErr } = await supabaseAdmin
+    const { data: pl, error: plErr } = await supabase
       .from("playlists")
       .insert({
         user_id: userId,
@@ -225,7 +226,7 @@ export const importYouTubePlaylist = createServerFn({ method: "POST" })
     }));
 
     if (rows.length > 0) {
-      const { error: insErr } = await supabaseAdmin.from("playlist_tracks").insert(rows);
+      const { error: insErr } = await supabase.from("playlist_tracks").insert(rows);
       if (insErr) {
         console.error("Insert YT playlist tracks failed", insErr);
         throw new Error("Failed to save playlist tracks");
