@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { requireServerFnAuth } from "@/utils/server-fn-auth";
+
+type DB = SupabaseClient<Database>;
 
 interface YTSearchItem {
   id: { videoId?: string };
