@@ -55,15 +55,15 @@
   --popover: oklch(0.22 0.005 0);
   --popover-foreground: oklch(0.98 0 0);
   /* Spotify green */
-  --primary: oklch(0.72 0.19 150);
-  --primary-foreground: oklch(0.16 0.02 150);
+  --primary: oklch(0.62 0.18 150);
+  --primary-foreground: oklch(0.99 0 0);
   --primary-glow: oklch(0.72 0.19 150);
   /* YouTube red */
   --accent-red: oklch(0.62 0.24 27);
   --secondary: oklch(0.27 0.005 0);
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.25 0.005 0);
-  --muted-foreground: oklch(0.72 0.005 0);
+  --muted-foreground: oklch(0.78 0.005 0);
   --accent: oklch(0.3 0.005 0);
   --accent-foreground: oklch(0.98 0 0);
   --destructive: oklch(0.62 0.24 27);
@@ -73,8 +73,8 @@
   --ring: oklch(0.72 0.19 150);
   --sidebar: oklch(0.12 0.005 0);
   --sidebar-foreground: oklch(0.88 0 0);
-  --sidebar-primary: oklch(0.72 0.19 150);
-  --sidebar-primary-foreground: oklch(0.16 0.02 150);
+  --sidebar-primary: oklch(0.62 0.18 150);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.23 0.005 0);
   --sidebar-accent-foreground: oklch(0.98 0 0);
   --sidebar-border: oklch(0.23 0.005 0);
@@ -192,13 +192,14 @@
 .bg-gradient-cyan    { background-image: var(--gradient-cyan); }
 .bg-gradient-sunset  { background-image: var(--gradient-sunset); }
 .bg-gradient-animated {
-  background: linear-gradient(120deg, oklch(0.72 0.2 250), oklch(0.72 0.22 350), oklch(0.65 0.24 300), oklch(0.72 0.2 250));
+  background: linear-gradient(120deg, oklch(0.72 0.19 150), oklch(0.22 0.005 0), oklch(0.62 0.24 27), oklch(0.22 0.005 0), oklch(0.72 0.19 150));
   background-size: 300% 300%;
   animation: gradient-shift 8s ease infinite;
 }
 
+/* Text gradient skips the dark midpoint so headings stay readable */
 .text-gradient {
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, oklch(0.78 0.18 150), oklch(0.7 0.22 27));
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
