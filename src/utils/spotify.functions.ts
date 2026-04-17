@@ -357,7 +357,7 @@ async function fetchAllPlaylistTracks(
     }
     url = json.next;
     pageCount++;
-    if (url) await pause(600);
+    // No artificial pause between pages — spotifyFetch already handles 429 with backoff.
   }
   return { rows, status: 200 };
 }
