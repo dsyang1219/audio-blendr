@@ -4,19 +4,34 @@ import { Music, Youtube, Library } from "lucide-react";
 
 function OwlIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true">
-      {/* Head/body silhouette */}
-      <path d="M12 2c-4.5 0-7.5 3-7.5 7v6c0 3.6 3 6.5 7.5 6.5s7.5-2.9 7.5-6.5V9c0-4-3-7-7.5-7z" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.15" />
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true">
       {/* Ear tufts */}
-      <path d="M5.5 5.5L4 3M18.5 5.5L20 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      {/* Eyes (rings) */}
-      <circle cx="9" cy="10" r="2.2" stroke="currentColor" strokeWidth="1.3" fill="none" />
-      <circle cx="15" cy="10" r="2.2" stroke="currentColor" strokeWidth="1.3" fill="none" />
+      <path d="M7 7 L4.5 3 L8.5 5.5 Z" fill="currentColor" />
+      <path d="M25 7 L27.5 3 L23.5 5.5 Z" fill="currentColor" />
+      {/* Body/head silhouette - rounded owl shape */}
+      <path
+        d="M16 4c-5.5 0-9 3.5-9 8v6c0 4.5 4 8 9 8s9-3.5 9-8v-6c0-4.5-3.5-8-9-8z"
+        fill="currentColor"
+        fillOpacity="0.2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      {/* Facial disc / brow line between eyes */}
+      <path d="M16 9 v6" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+      {/* Big owl eyes - white rings */}
+      <circle cx="11.5" cy="13" r="3.2" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="20.5" cy="13" r="3.2" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.3" />
       {/* Pupils */}
-      <circle cx="9" cy="10" r="0.9" fill="currentColor" />
-      <circle cx="15" cy="10" r="0.9" fill="currentColor" />
-      {/* Beak */}
-      <path d="M12 12.2l-0.9 1.6h1.8z" fill="currentColor" />
+      <circle cx="11.5" cy="13" r="1.4" fill="currentColor" />
+      <circle cx="20.5" cy="13" r="1.4" fill="currentColor" />
+      {/* Beak - triangular */}
+      <path d="M16 16 L14.5 18.5 L17.5 18.5 Z" fill="currentColor" />
+      {/* Wing hints */}
+      <path d="M8 18 Q9 22 11 23" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.7" />
+      <path d="M24 18 Q23 22 21 23" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.7" />
+      {/* Feet */}
+      <path d="M13 25.5 v1.5 M14 25.5 v1.5 M15 25.5 v1.5" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" />
+      <path d="M17 25.5 v1.5 M18 25.5 v1.5 M19 25.5 v1.5" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" />
     </svg>
   );
 }
@@ -53,7 +68,7 @@ function Landing() {
       <main className="container mx-auto px-6 py-20">
         <section className="mx-auto max-w-3xl text-center animate-fade-in">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium">
-            <OwlIcon className="h-3.5 w-3.5 text-primary" />
+            <OwlIcon className="h-5 w-5 text-primary" />
             Built for Maddy
           </div>
           <h2 className="text-5xl font-bold tracking-tight md:text-7xl">
