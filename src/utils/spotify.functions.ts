@@ -341,7 +341,21 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       plUrl = json.next;
     }
 
-    await supabase.from("playlists").delete().eq("user_id", userId);
+    const { data: existingPlaylists } = await supabase.from("playlists").select("id").eq("user_id", userId);
+    const existingIds = (existingPlaylists ?? []).map((playlist) => playlist.id);
+    if (existingIds.length > 0) {
+      const { error: deleteTracksError } = await supabase.from("playlist_tracks").delete().in("playlist_id", existingIds);
+      if (deleteTracksError) {
+        console.error("Delete old playlist tracks failed", deleteTracksError);
+        throw new Error("Failed to refresh playlists");
+      }
+    }
+
+    const { error: deletePlaylistsError } = await supabase.from("playlists").delete().eq("user_id", userId);
+    if (deletePlaylistsError) {
+      console.error("Delete old playlists failed", deletePlaylistsError);
+      throw new Error("Failed to refresh playlists");
+    }
 
     let totalTracks = 0;
     for (const p of playlists) {
@@ -352,6 +366,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
           name: p.name,
           description: p.description,
           cover_url: p.image,
+          source: "spotify",
         })
         .select("id")
         .single();
@@ -363,17 +378,25 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       const tRes = await fetch(`${SPOTIFY_API}/playlists/${p.id}/tracks?limit=100`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      if (!tRes.ok) continue;
-      const tJson = (await tRes.json()) as { items: { track: SpotifyTrackObj | null }[] };
+      if (!tRes.ok) {
+        console.error("Fetch playlist tracks failed", p.id, tRes.status, await tRes.text());
+        continue;
+      }
 
+      const tJson = (await tRes.json()) as { items: { track: SpotifyTrackObj | null }[] };
       const rows = tJson.items
-        .map((it, idx) => (it.track ? { ...mapTrack(it.track), playlist_id: pl.id, user_id: userId, position: idx } : null))
+        .map((it, idx) => (it.track ? { ...mapTrack(it.track), playlist_id: pl.id, user_id: userId, position: idx, source: "spotify" } : null))
         .filter((x): x is NonNullable<typeof x> => !!x);
 
-      if (rows.length > 0) {
-        await supabase.from("playlist_tracks").insert(rows);
-        totalTracks += rows.length;
+      if (rows.length === 0) continue;
+
+      const { error: insertTracksError } = await supabase.from("playlist_tracks").insert(rows);
+      if (insertTracksError) {
+        console.error("Insert playlist tracks failed", p.name, insertTracksError);
+        continue;
       }
+
+      totalTracks += rows.length;
     }
 
     return { playlists: playlists.length, tracks: totalTracks };
