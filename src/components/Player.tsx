@@ -148,28 +148,116 @@ export function Player() {
   return (
     <footer className="border-t border-border bg-sidebar/90 backdrop-blur-xl px-3 py-2.5 sm:px-4 sm:py-3 shadow-elegant">
       <div className="grid grid-cols-[1fr_auto] items-center gap-3 md:grid-cols-3 md:gap-4">
-        {/* Left: now playing */}
-        <div className="flex min-w-0 items-center gap-3">
-          <div className={cn(
-            "h-11 w-11 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-lg bg-muted shadow-elegant transition-transform",
-            isPlaying && "animate-float"
-          )}>
-            {current?.album_art_url ? (
-              <img src={current.album_art_url} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-secondary">
-                <Music className="h-5 w-5 sm:h-6 sm:w-6 text-secondary-foreground" />
+        {/* Left: now playing — tap on mobile to open full-screen Now Playing sheet */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              disabled={!current}
+              className="flex min-w-0 items-center gap-3 text-left md:cursor-default md:pointer-events-none disabled:opacity-100"
+              aria-label="Open now playing"
+            >
+              <div className={cn(
+                "h-11 w-11 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-lg bg-muted shadow-elegant transition-transform",
+                isPlaying && "animate-float"
+              )}>
+                {current?.album_art_url ? (
+                  <img src={current.album_art_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-secondary">
+                    <Music className="h-5 w-5 sm:h-6 sm:w-6 text-secondary-foreground" />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div className="min-w-0">
-            <div className="truncate text-xs sm:text-sm font-semibold">{current?.title ?? "Nothing playing"}</div>
-            <div className="truncate text-[11px] sm:text-xs text-muted-foreground">{current?.artist ?? "Pick a song from your library"}</div>
-            {current?.album && (
-              <div className="hidden sm:block truncate text-[11px] text-muted-foreground/70">{current.album}</div>
-            )}
-          </div>
-        </div>
+              <div className="min-w-0">
+                <div className="truncate text-xs sm:text-sm font-semibold">{current?.title ?? "Nothing playing"}</div>
+                <div className="truncate text-[11px] sm:text-xs text-muted-foreground">{current?.artist ?? "Pick a song from your library"}</div>
+                {current?.album && (
+                  <div className="hidden sm:block truncate text-[11px] text-muted-foreground/70">{current.album}</div>
+                )}
+              </div>
+            </button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="md:hidden h-[100dvh] w-full bg-gradient-to-b from-sidebar via-background to-background border-0 p-0">
+            <div className="flex h-full flex-col px-6 pt-6 pb-10">
+              <div className="mb-6 flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Now Playing</span>
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="mx-auto mb-8 aspect-square w-full max-w-sm overflow-hidden rounded-2xl bg-muted shadow-elegant ring-1 ring-white/10">
+                {current?.album_art_url ? (
+                  <img src={current.album_art_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-secondary">
+                    <Music className="h-24 w-24 text-secondary-foreground" />
+                  </div>
+                )}
+              </div>
+              <div className="mb-6 min-w-0">
+                <div className="truncate text-2xl font-bold">{current?.title ?? "Nothing playing"}</div>
+                <div className="truncate text-base text-muted-foreground">{current?.artist ?? "Pick a song from your library"}</div>
+                {current?.album && <div className="mt-1 truncate text-sm text-muted-foreground/70">{current.album}</div>}
+              </div>
+              <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="w-9 text-right tabular-nums">{fmt(progress)}</span>
+                <Slider
+                  value={[duration ? (progress / duration) * 100 : 0]}
+                  onValueChange={(v) => {
+                    if (!duration) return;
+                    setSeeking(true);
+                    const t = (v[0] / 100) * duration;
+                    seekValueRef.current = t;
+                    setProgress(t);
+                  }}
+                  onValueCommit={(v) => {
+                    if (!playerRef.current || !duration) { setSeeking(false); return; }
+                    const t = (v[0] / 100) * duration;
+                    try { playerRef.current.seekTo(t, true); } catch { /* ignore */ }
+                    setProgress(t);
+                    seekValueRef.current = null;
+                    setTimeout(() => setSeeking(false), 250);
+                  }}
+                  max={100}
+                  step={0.5}
+                  className="flex-1"
+                />
+                <span className="w-9 tabular-nums">{fmt(duration)}</span>
+              </div>
+              <div className="mt-6 flex items-center justify-center gap-8">
+                <button
+                  onClick={toggleShuffle}
+                  className={cn("transition", shuffle ? "text-primary" : "text-muted-foreground")}
+                  aria-label="Toggle shuffle"
+                  aria-pressed={shuffle}
+                >
+                  <Shuffle className="h-6 w-6" />
+                </button>
+                <button onClick={playPrev} className="text-muted-foreground hover:text-foreground" aria-label="Previous">
+                  <SkipBack className="h-8 w-8" />
+                </button>
+                <button
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  disabled={!current}
+                  className={cn(
+                    "flex h-16 w-16 items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-transform active:scale-95 disabled:opacity-40",
+                    isPlaying && "animate-pulse-glow"
+                  )}
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? <Pause className="h-7 w-7" /> : <Play className="h-7 w-7 fill-current" />}
+                </button>
+                <button onClick={playNext} className="text-muted-foreground hover:text-foreground" aria-label="Next">
+                  <SkipForward className="h-8 w-8" />
+                </button>
+                <div className="w-6" />
+              </div>
+              <div className="mt-8 flex items-center gap-3">
+                <Volume2 className="h-4 w-4 text-muted-foreground" />
+                <Slider value={[volume]} onValueChange={(v) => setVolume(v[0])} max={100} step={1} className="flex-1" />
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
 
         {/* Center: controls */}
         <div className="flex flex-col items-center gap-1 md:order-none order-last md:col-auto col-span-2">
@@ -237,8 +325,25 @@ export function Player() {
           </div>
         </div>
 
-        {/* Right: mobile play button + desktop volume */}
+        {/* Right: mobile play button + mobile volume popover + desktop volume slider */}
         <div className="flex items-center justify-end gap-2">
+          {/* Mobile-only volume popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="md:hidden flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent/40 transition"
+                aria-label="Volume"
+              >
+                <Volume2 className="h-4 w-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="end" className="w-44 p-3">
+              <div className="flex items-center gap-2">
+                <Volume2 className="h-4 w-4 text-muted-foreground" />
+                <Slider value={[volume]} onValueChange={(v) => setVolume(v[0])} max={100} step={1} className="flex-1" />
+              </div>
+            </PopoverContent>
+          </Popover>
           {/* Mobile-only play button */}
           <button
             onClick={() => setIsPlaying(!isPlaying)}
