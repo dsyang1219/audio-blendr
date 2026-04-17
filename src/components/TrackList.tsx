@@ -44,6 +44,8 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
   const { user } = useAuth();
   const [hover, setHover] = useState<string | null>(null);
   const [userPlaylists, setUserPlaylists] = useState<UserPlaylist[]>([]);
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const addTrackFn = useServerFn(addExistingTrackToPlaylist);
   const queueTracks = tracks.map((t) => ({ ...t, sourceTable: t.sourceTable ?? table }));
 
   useEffect(() => {
@@ -58,28 +60,25 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
 
   const addToPlaylist = async (track: Track, targetPlaylistId: string) => {
     if (!user) return;
-    const { count } = await supabase
-      .from("playlist_tracks")
-      .select("id", { count: "exact", head: true })
-      .eq("playlist_id", targetPlaylistId);
-
-    const { error } = await supabase.from("playlist_tracks").insert({
-      user_id: user.id,
-      playlist_id: targetPlaylistId,
-      title: track.title,
-      artist: track.artist,
-      album: track.album ?? null,
-      album_art_url: track.album_art_url ?? null,
-      duration_seconds: track.duration_seconds ?? null,
-      youtube_video_id: track.youtube_video_id ?? null,
-      spotify_track_id: track.spotify_track_id ?? null,
-      source: track.spotify_track_id ? "spotify" : "youtube",
-      position: count ?? 0,
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
+    setAddingId(track.id);
+    try {
+      await addTrackFn({
+        data: {
+          playlistId: targetPlaylistId,
+          title: track.title,
+          artist: track.artist,
+          album: track.album ?? null,
+          album_art_url: track.album_art_url ?? null,
+          duration_seconds: track.duration_seconds ?? null,
+          spotify_track_id: track.spotify_track_id ?? null,
+          youtube_video_id: track.youtube_video_id ?? null,
+        },
+      });
       toast.success("Added to playlist");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add");
+    } finally {
+      setAddingId(null);
     }
   };
 
