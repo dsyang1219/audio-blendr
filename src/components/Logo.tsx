@@ -20,7 +20,7 @@ export function LogoMark({ className }: { className?: string }) {
         </linearGradient>
         <linearGradient id="ab-grad-b" x1="0" y1="20" x2="40" y2="20" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="oklch(0.72 0.18 250)" />
-          <stop offset="100%" stopColor="oklch(0.5 0.22 25)" />
+          <stop offset="100%" stopColor="oklch(0.6 0.22 305)" />
         </linearGradient>
       </defs>
       {/* Left wave bars — cool blue side of the blend */}

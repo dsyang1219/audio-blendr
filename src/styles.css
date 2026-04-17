@@ -55,14 +55,14 @@
   --primary: oklch(0.68 0.18 250);
   --primary-foreground: oklch(0.99 0 0);
   --primary-glow: oklch(0.76 0.16 245);
-  --accent-red: oklch(0.5 0.22 25);
+  --accent-red: oklch(0.55 0.22 305);
   --secondary: oklch(0.28 0.012 255);
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.26 0.012 255);
   --muted-foreground: oklch(0.78 0.008 255);
   --accent: oklch(0.31 0.015 255);
   --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.5 0.22 25);
+  --destructive: oklch(0.55 0.22 305);
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(0.31 0.012 255);
   --input: oklch(0.29 0.012 255);
@@ -76,14 +76,14 @@
   --sidebar-border: oklch(0.24 0.012 255);
   --sidebar-ring: oklch(0.68 0.18 250);
 
-  --gradient-primary: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.5 0.22 25) 65%, oklch(0.5 0.22 25) 100%);
-  --gradient-violet: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.5 0.22 25) 65%, oklch(0.5 0.22 25) 100%);
-  --gradient-cyan: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.5 0.22 25) 65%, oklch(0.5 0.22 25) 100%);
-  --gradient-sunset: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.5 0.22 25) 65%, oklch(0.5 0.22 25) 100%);
+  --gradient-primary: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.55 0.22 305) 65%, oklch(0.55 0.22 305) 100%);
+  --gradient-violet: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.55 0.22 305) 65%, oklch(0.55 0.22 305) 100%);
+  --gradient-cyan: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.55 0.22 305) 65%, oklch(0.55 0.22 305) 100%);
+  --gradient-sunset: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.55 0.22 305) 65%, oklch(0.55 0.22 305) 100%);
   --gradient-mesh: radial-gradient(at 15% 0%, oklch(0.68 0.18 250 / 0.12) 0px, transparent 55%),
-                   radial-gradient(at 85% 90%, oklch(0.5 0.22 25 / 0.1) 0px, transparent 55%);
+                   radial-gradient(at 85% 90%, oklch(0.55 0.22 305 / 0.1) 0px, transparent 55%);
   --shadow-glow: 0 8px 30px -12px oklch(0.68 0.18 250 / 0.45);
-  --shadow-pink: 0 8px 30px -12px oklch(0.5 0.22 25 / 0.45);
+  --shadow-pink: 0 8px 30px -12px oklch(0.55 0.22 305 / 0.45);
   --shadow-elegant: 0 20px 50px -20px oklch(0.05 0 0 / 0.6);
 }
 
@@ -102,7 +102,7 @@
   --muted-foreground: oklch(0.78 0.008 255);
   --accent: oklch(0.31 0.015 255);
   --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.62 0.24 27);
+  --destructive: oklch(0.55 0.22 305);
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(0.31 0.012 255);
   --input: oklch(0.29 0.012 255);
@@ -186,13 +186,13 @@
 .bg-gradient-cyan    { background-image: var(--gradient-cyan); }
 .bg-gradient-sunset  { background-image: var(--gradient-sunset); }
 .bg-gradient-animated {
-  background: linear-gradient(120deg, oklch(0.76 0.16 245), oklch(0.22 0.005 0), oklch(0.62 0.24 27), oklch(0.22 0.005 0), oklch(0.76 0.16 245));
+  background: linear-gradient(120deg, oklch(0.76 0.16 245), oklch(0.22 0.005 0), oklch(0.55 0.22 305), oklch(0.22 0.005 0), oklch(0.76 0.16 245));
   background-size: 300% 300%;
   animation: gradient-shift 8s ease infinite;
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, oklch(0.8 0.16 245) 0%, oklch(0.8 0.16 245) 35%, oklch(0.55 0.22 25) 65%, oklch(0.55 0.22 25) 100%);
+  background: linear-gradient(135deg, oklch(0.8 0.16 245) 0%, oklch(0.8 0.16 245) 35%, oklch(0.6 0.22 305) 65%, oklch(0.6 0.22 305) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
