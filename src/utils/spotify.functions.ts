@@ -176,7 +176,13 @@ function getRetryDelayMs(retryAfterHeader: string | null, fallbackMs: number) {
   return fallbackMs;
 }
 
-async function spotifyFetch(url: string, accessToken: string, maxRetries = 1): Promise<Response> {
+async function spotifyFetch(
+  url: string,
+  accessToken: string,
+  options?: { maxRetries?: number; maxWaitMs?: number },
+): Promise<Response> {
+  const maxRetries = options?.maxRetries ?? 1;
+  const maxWaitMs = options?.maxWaitMs ?? 2_000;
   let attempt = 0;
   let delay = 800;
 
@@ -185,13 +191,13 @@ async function spotifyFetch(url: string, accessToken: string, maxRetries = 1): P
     if (res.status !== 429) return res;
     if (attempt >= maxRetries) return res;
 
-    // Single quick retry only — long waits exceed the edge function timeout.
-    // Cap at 2s; if Spotify wants longer, surface the 429 to the caller.
+    // Keep retries short by default, but allow slightly longer waits for
+    // lightweight playlist-list calls where a few extra seconds are worth it.
     const headerWait = getRetryDelayMs(res.headers.get("retry-after"), delay);
-    const waitMs = Math.min(headerWait, 2_000);
+    const waitMs = Math.min(headerWait, maxWaitMs);
     console.warn(`Spotify 429, waiting ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
     await wait(waitMs);
-    delay = Math.min(Math.round(delay * 2), 2_000);
+    delay = Math.min(Math.round(delay * 2), maxWaitMs);
     attempt++;
   }
 }
@@ -410,7 +416,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
     let pageCount = 0;
     let partialReason: string | null = null;
     while (plUrl && pageCount < 20) {
-      const res: Response = await spotifyFetch(plUrl, accessToken);
+      const res: Response = await spotifyFetch(plUrl, accessToken, { maxRetries: 2, maxWaitMs: 5_000 });
       if (!res.ok) {
         const errText = await res.text();
         console.error("Spotify /me/playlists failed", res.status, errText);
@@ -504,7 +510,7 @@ export const syncSinglePlaylist = createServerFn({ method: "POST" })
     // Step 1: ONE Spotify call to get just titles + artists (minimal fields).
     const minimalFields = "items(track(id,name,artists(name)))";
     const url = `${SPOTIFY_API}/playlists/${pl.spotify_playlist_id}/tracks?limit=100&fields=${encodeURIComponent(minimalFields)}`;
-    const res = await spotifyFetch(url, accessToken);
+    const res = await spotifyFetch(url, accessToken, { maxRetries: 2, maxWaitMs: 5_000 });
     if (!res.ok) {
       if (res.status === 429) throw new Error("Spotify is rate-limiting right now — please wait a few minutes and try again");
       if (res.status === 403) throw new Error("Spotify denied access to this playlist (it may be an algorithmic playlist like Discover Weekly)");
