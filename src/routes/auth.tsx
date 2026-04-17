@@ -26,7 +26,7 @@ function AuthPage() {
       <div className="w-full max-w-md">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2">
           <Music className="h-7 w-7 text-primary" />
-          <span className="text-xl font-bold">Tunemix</span>
+          <span className="text-xl font-bold">Audio Blendr</span>
         </Link>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-lg">
