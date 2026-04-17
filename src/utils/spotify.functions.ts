@@ -415,7 +415,6 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       }
       plUrl = json.next;
       pageCount++;
-      if (plUrl) await pause(600);
     }
 
     // Filter to only NEW playlists (incremental)
