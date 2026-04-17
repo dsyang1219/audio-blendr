@@ -1,6 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireServerFnAuth } from "@/utils/server-fn-auth";
 import { createSpotifyState, getSpotifyRedirectUri, parseSpotifyState } from "@/utils/spotify-auth";
+import {
+  buildYouTubeQuery,
+  fetchYouTubeVideoMetadata,
+  searchYouTubeOnce,
+  YouTubeQuotaError,
+} from "@/utils/youtube.server";
 
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
@@ -494,25 +500,86 @@ export const syncSinglePlaylist = createServerFn({ method: "POST" })
     }
 
     const accessToken = await refreshSpotifyToken(supabase, userId);
-    const { rows, status } = await fetchAllPlaylistTracks(pl.spotify_playlist_id, accessToken, userId);
-    if (!rows) {
-      if (status === 429) throw new Error("Spotify is rate-limiting right now — please wait a few minutes and try again");
-      if (status === 403) throw new Error("Spotify denied access to this playlist (it may be an algorithmic playlist like Discover Weekly that isn't accessible to third-party apps)");
-      throw new Error(`Spotify returned ${status} when fetching this playlist`);
+
+    // Step 1: ONE Spotify call to get just titles + artists (minimal fields).
+    const minimalFields = "items(track(id,name,artists(name)))";
+    const url = `${SPOTIFY_API}/playlists/${pl.spotify_playlist_id}/tracks?limit=100&fields=${encodeURIComponent(minimalFields)}`;
+    const res = await spotifyFetch(url, accessToken);
+    if (!res.ok) {
+      if (res.status === 429) throw new Error("Spotify is rate-limiting right now — please wait a few minutes and try again");
+      if (res.status === 403) throw new Error("Spotify denied access to this playlist (it may be an algorithmic playlist like Discover Weekly)");
+      throw new Error(`Spotify returned ${res.status} when fetching this playlist`);
+    }
+    const json = (await res.json()) as { items: { track: { id: string; name: string; artists: { name: string }[] } | null }[] };
+    const seeds = json.items
+      .map((it) => it.track)
+      .filter((t): t is { id: string; name: string; artists: { name: string }[] } => !!t)
+      .map((t) => ({
+        spotify_track_id: t.id,
+        title: t.name,
+        artist: t.artists.map((a) => a.name).join(", "),
+      }));
+
+    if (seeds.length === 0) {
+      await supabase.from("playlist_tracks").delete().eq("playlist_id", pl.id);
+      return { tracks: 0 };
     }
 
-    // Replace existing tracks
+    // Step 2: Resolve each track to a YouTube video ID (search.list = 100 quota each).
+    const resolved: Array<{ seed: typeof seeds[number]; videoId: string }> = [];
+    let quotaHit = false;
+    for (const seed of seeds) {
+      try {
+        const videoId = await searchYouTubeOnce(buildYouTubeQuery(seed.artist, seed.title));
+        if (videoId) resolved.push({ seed, videoId });
+      } catch (e) {
+        if (e instanceof YouTubeQuotaError) {
+          quotaHit = true;
+          break;
+        }
+        console.error("[sync] YouTube search failed for", seed.title, e);
+      }
+    }
+
+    if (resolved.length === 0) {
+      throw new Error(quotaHit
+        ? "YouTube quota exhausted — try again tomorrow"
+        : "Could not find any of these tracks on YouTube");
+    }
+
+    // Step 3: ONE YouTube videos.list call per 50 IDs to fetch all metadata.
+    const metaMap = await fetchYouTubeVideoMetadata(resolved.map((r) => r.videoId));
+
+    // Step 4: Build rows using YouTube metadata, falling back to Spotify title/artist.
+    const rows = resolved.map((r, position) => {
+      const meta = metaMap.get(r.videoId);
+      return {
+        user_id: userId,
+        playlist_id: pl.id,
+        title: r.seed.title,
+        artist: r.seed.artist,
+        album: meta?.channel ?? null,
+        album_art_url: meta?.thumbnail ?? null,
+        spotify_track_id: r.seed.spotify_track_id,
+        youtube_video_id: r.videoId,
+        duration_seconds: meta?.durationSeconds ?? null,
+        source: "spotify",
+        position,
+      };
+    });
+
     await supabase.from("playlist_tracks").delete().eq("playlist_id", pl.id);
-
-    if (rows.length === 0) return { tracks: 0 };
-
-    const tracksWithPlaylist = rows.map((row) => ({ ...row, playlist_id: pl.id }));
-    const { error: insErr } = await supabase.from("playlist_tracks").insert(tracksWithPlaylist);
+    const { error: insErr } = await supabase.from("playlist_tracks").insert(rows);
     if (insErr) {
       console.error("Insert single playlist tracks failed", insErr);
       throw new Error("Failed to save tracks");
     }
-    return { tracks: rows.length };
+
+    return {
+      tracks: rows.length,
+      attempted: seeds.length,
+      quotaHit,
+    };
   });
 
 export const addExistingTrackToPlaylist = createServerFn({ method: "POST" })
