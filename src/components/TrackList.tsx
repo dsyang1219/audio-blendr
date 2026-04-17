@@ -129,7 +129,7 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
               <span className="flex justify-center text-muted-foreground">
                 {hover === t.id ? (
                   <button
-                    onClick={(e) => { e.stopPropagation(); playQueue(queueTracks, i); }}
+                    onClick={(e) => { e.stopPropagation(); playQueue(queueTracks, i, { shuffle }); }}
                     className="text-foreground hover:text-primary"
                     aria-label="Play"
                   >
