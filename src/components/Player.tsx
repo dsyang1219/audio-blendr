@@ -142,6 +142,17 @@ export function Player() {
         {/* Center: controls */}
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center gap-4">
+            <button
+              onClick={toggleShuffle}
+              className={cn(
+                "transition hover:text-foreground",
+                shuffle ? "text-primary" : "text-muted-foreground"
+              )}
+              aria-label="Toggle shuffle"
+              title={shuffle ? "Shuffle on" : "Shuffle off"}
+            >
+              <Shuffle className="h-4 w-4" />
+            </button>
             <button onClick={playPrev} className="text-muted-foreground hover:text-foreground" aria-label="Previous">
               <SkipBack className="h-5 w-5" />
             </button>
