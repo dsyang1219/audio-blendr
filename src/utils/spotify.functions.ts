@@ -157,24 +157,34 @@ async function refreshSpotifyToken(
   return tok.access_token;
 }
 
-async function spotifyFetch(url: string, accessToken: string, maxRetries = 4): Promise<Response> {
+async function wait(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getRetryDelayMs(retryAfterHeader: string | null, fallbackMs: number) {
+  const retryAfterSeconds = Number(retryAfterHeader);
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+    return Math.min(retryAfterSeconds * 1000, 60_000);
+  }
+
+  return fallbackMs;
+}
+
+async function spotifyFetch(url: string, accessToken: string, maxRetries = 6): Promise<Response> {
   let attempt = 0;
-  let delay = 1000;
+  let delay = 1500;
+
   while (true) {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (res.status !== 429) return res;
     if (attempt >= maxRetries) return res;
-    const retryAfter = Number(res.headers.get("retry-after"));
-    const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter * 1000, 30_000) : delay;
-    console.warn(`Spotify 429, waiting ${wait}ms (attempt ${attempt + 1}/${maxRetries})`);
-    await new Promise((r) => setTimeout(r, wait));
-    delay = Math.min(delay * 2, 30_000);
+
+    const waitMs = getRetryDelayMs(res.headers.get("retry-after"), delay + Math.floor(Math.random() * 750));
+    console.warn(`Spotify 429, waiting ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+    await wait(waitMs);
+    delay = Math.min(Math.round(delay * 1.8), 60_000);
     attempt++;
   }
-}
-
-async function pause(ms: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 interface SpotifyTrackObj {
@@ -344,21 +354,28 @@ async function fetchAllPlaylistTracks(
   let url: string | null = `${SPOTIFY_API}/playlists/${spotifyPlaylistId}/tracks?limit=100&fields=${encodeURIComponent(TRACK_FIELDS)}`;
   let position = 0;
   let pageCount = 0;
+
   while (url && pageCount < 10) {
     const res: Response = await spotifyFetch(url, accessToken);
     if (!res.ok) {
       console.error("Fetch playlist tracks failed", spotifyPlaylistId, res.status, await res.text());
       return { rows: null, status: res.status };
     }
+
     const json = (await res.json()) as { items: { track: SpotifyTrackObj | null }[]; next: string | null };
     for (const it of json.items) {
       if (!it.track) continue;
       rows.push({ ...mapTrack(it.track), user_id: userId, position: position++, source: "spotify" as const });
     }
+
     url = json.next;
     pageCount++;
-    // No artificial pause between pages — spotifyFetch already handles 429 with backoff.
+
+    if (url) {
+      await wait(250 + Math.floor(Math.random() * 250));
+    }
   }
+
   return { rows, status: 200 };
 }
 
@@ -415,6 +432,10 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       }
       plUrl = json.next;
       pageCount++;
+
+      if (plUrl) {
+        await wait(250 + Math.floor(Math.random() * 250));
+      }
     }
 
     // Filter to only NEW playlists (incremental)
@@ -430,8 +451,8 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       if (!rows) {
         if (status === 429) {
           rateLimitedAny = true;
-          // stop early — back off and let user retry later
-          break;
+          await wait(5_000);
+          continue;
         }
         // 403 or other: skip this playlist but continue with others
         continue;
@@ -470,7 +491,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
 
     let message: string | null = null;
     if (rateLimitedAny) {
-      message = `Spotify rate-limited the sync. Imported ${inserted} new playlists with ${totalTracks} tracks before stopping. Wait a few minutes and run sync again to continue.`;
+      message = `Spotify slowed the sync down, but Audio Blendr still imported ${inserted} new playlists with ${totalTracks} tracks. Run sync again to continue anything that is still missing.`;
     } else if (partialReason) {
       message = partialReason;
     } else if (inserted === 0 && skippedCount > 0) {
