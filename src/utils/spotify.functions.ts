@@ -171,22 +171,20 @@ function getRetryDelayMs(retryAfterHeader: string | null, fallbackMs: number) {
   return fallbackMs;
 }
 
-async function spotifyFetch(url: string, accessToken: string, maxRetries = 2): Promise<Response> {
+async function spotifyFetch(url: string, accessToken: string, maxRetries = 3): Promise<Response> {
   let attempt = 0;
-  let delay = 800;
+  let delay = 1500;
 
   while (true) {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (res.status !== 429) return res;
     if (attempt >= maxRetries) return res;
 
-    // Cap retry waits to a few seconds so we never block the worker for long.
-    // If Spotify is heavily rate-limiting, we bail and let the user re-trigger
-    // sync — each click resumes from where the previous one stopped.
-    const waitMs = Math.min(getRetryDelayMs(res.headers.get("retry-after"), delay), 4_000);
+    // Respect Spotify's Retry-After header up to 8s; otherwise back off gently.
+    const waitMs = Math.min(getRetryDelayMs(res.headers.get("retry-after"), delay), 8_000);
     console.warn(`Spotify 429, waiting ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
     await wait(waitMs);
-    delay = Math.min(Math.round(delay * 1.8), 4_000);
+    delay = Math.min(Math.round(delay * 2), 8_000);
     attempt++;
   }
 }
