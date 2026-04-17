@@ -176,10 +176,25 @@ export function Player() {
             <Slider
               value={[duration ? (progress / duration) * 100 : 0]}
               onValueChange={(v) => {
-                if (!playerRef.current || !duration) return;
+                if (!duration) return;
+                setSeeking(true);
                 const t = (v[0] / 100) * duration;
-                playerRef.current.seekTo(t, true);
+                seekValueRef.current = t;
                 setProgress(t);
+              }}
+              onValueCommit={(v) => {
+                if (!playerRef.current || !duration) {
+                  setSeeking(false);
+                  return;
+                }
+                const t = (v[0] / 100) * duration;
+                try {
+                  playerRef.current.seekTo(t, true);
+                } catch { /* ignore */ }
+                setProgress(t);
+                seekValueRef.current = null;
+                // Allow polling to resume after the player updates internally
+                setTimeout(() => setSeeking(false), 250);
               }}
               max={100}
               step={0.5}
