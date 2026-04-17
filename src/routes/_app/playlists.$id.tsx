@@ -6,6 +6,7 @@ import { TrackList } from "@/components/TrackList";
 import { Music, Trash2, Play, Shuffle, RefreshCw, Pencil, Upload, X } from "lucide-react";
 import type { Track } from "@/lib/player-context";
 import { usePlayer } from "@/lib/player-context";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,7 @@ function PlaylistDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { playQueue } = usePlayer();
+  const { playQueue, shuffle, toggleShuffle } = usePlayer();
   const [playlist, setPlaylist] = useState<PlaylistMeta | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,12 +82,11 @@ function PlaylistDetail() {
 
   const handlePlayAll = () => {
     if (queueTracks.length === 0) return;
-    playQueue(queueTracks, 0, { shuffle: false });
+    playQueue(queueTracks, 0, { shuffle });
   };
 
   const handleShuffle = () => {
-    if (queueTracks.length === 0) return;
-    playQueue(queueTracks, 0, { shuffle: true });
+    toggleShuffle();
   };
 
   const handleSyncFromSpotify = async () => {
@@ -232,7 +232,18 @@ function PlaylistDetail() {
         <Button onClick={handlePlayAll} disabled={tracks.length === 0} size="lg" className="gap-2 shadow-glow hover:scale-105 transition-all">
           <Play className="h-5 w-5 fill-current" /> Play
         </Button>
-        <Button onClick={handleShuffle} disabled={tracks.length === 0} size="lg" variant="secondary" className="gap-2">
+        <Button
+          onClick={handleShuffle}
+          disabled={tracks.length === 0}
+          size="lg"
+          variant="ghost"
+          aria-pressed={shuffle}
+          className={cn(
+            "gap-2 transition-colors",
+            shuffle ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"
+          )}
+          title={shuffle ? "Shuffle on" : "Shuffle off"}
+        >
           <Shuffle className="h-5 w-5" /> Shuffle
         </Button>
         <AddSongDialog playlistId={id} onAdded={load} />
