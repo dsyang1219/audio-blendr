@@ -142,6 +142,9 @@ export function Player() {
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold">{current?.title ?? "Nothing playing"}</div>
             <div className="truncate text-xs text-muted-foreground">{current?.artist ?? "Pick a song from your library"}</div>
+            {current?.album && (
+              <div className="truncate text-[11px] text-muted-foreground/70">{current.album}</div>
+            )}
           </div>
         </div>
 
