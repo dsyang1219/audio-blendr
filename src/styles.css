@@ -44,83 +44,82 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Audio Blendr — green→red gradient dark theme */
+/* Audio Blendr — Spotify green → YouTube red gradient theme */
 :root {
   --radius: 0.5rem;
-  /* Warm dark base, vivid green primary flowing through amber to red accents */
-  --background: oklch(0.17 0.02 60);
+  /* Neutral dark base so the green→red gradient pops */
+  --background: oklch(0.16 0.005 0);
   --foreground: oklch(0.98 0 0);
-  --card: oklch(0.23 0.025 60);
+  --card: oklch(0.22 0.005 0);
   --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.23 0.025 60);
+  --popover: oklch(0.22 0.005 0);
   --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.72 0.2 145);
-  --primary-foreground: oklch(0.16 0.02 145);
-  --primary-glow: oklch(0.78 0.18 120);
-  --accent-amber: oklch(0.78 0.18 70);
-  --accent-orange: oklch(0.72 0.2 40);
-  --accent-red: oklch(0.65 0.24 25);
-  --secondary: oklch(0.28 0.02 60);
+  /* Spotify green */
+  --primary: oklch(0.72 0.19 150);
+  --primary-foreground: oklch(0.16 0.02 150);
+  --primary-glow: oklch(0.72 0.19 150);
+  /* YouTube red */
+  --accent-red: oklch(0.62 0.24 27);
+  --secondary: oklch(0.27 0.005 0);
   --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.26 0.02 60);
-  --muted-foreground: oklch(0.72 0.02 60);
-  --accent: oklch(0.32 0.03 50);
+  --muted: oklch(0.25 0.005 0);
+  --muted-foreground: oklch(0.72 0.005 0);
+  --accent: oklch(0.3 0.005 0);
   --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.62 0.24 25);
+  --destructive: oklch(0.62 0.24 27);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.32 0.02 60);
-  --input: oklch(0.3 0.02 60);
-  --ring: oklch(0.72 0.2 145);
-  --sidebar: oklch(0.13 0.02 60);
+  --border: oklch(0.3 0.005 0);
+  --input: oklch(0.28 0.005 0);
+  --ring: oklch(0.72 0.19 150);
+  --sidebar: oklch(0.12 0.005 0);
   --sidebar-foreground: oklch(0.88 0 0);
-  --sidebar-primary: oklch(0.72 0.2 145);
-  --sidebar-primary-foreground: oklch(0.16 0.02 145);
-  --sidebar-accent: oklch(0.24 0.03 50);
+  --sidebar-primary: oklch(0.72 0.19 150);
+  --sidebar-primary-foreground: oklch(0.16 0.02 150);
+  --sidebar-accent: oklch(0.23 0.005 0);
   --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.24 0.02 60);
-  --sidebar-ring: oklch(0.72 0.2 145);
+  --sidebar-border: oklch(0.23 0.005 0);
+  --sidebar-ring: oklch(0.72 0.19 150);
 
-  /* Reusable gradients & shadows — green → amber → red */
-  --gradient-primary: linear-gradient(135deg, oklch(0.72 0.2 145), oklch(0.65 0.24 25));
-  --gradient-violet: linear-gradient(135deg, oklch(0.72 0.2 145), oklch(0.78 0.18 70));
-  --gradient-cyan: linear-gradient(135deg, oklch(0.72 0.2 145), oklch(0.78 0.18 120));
-  --gradient-sunset: linear-gradient(135deg, oklch(0.78 0.18 70), oklch(0.65 0.24 25));
-  --gradient-mesh: radial-gradient(at 20% 0%, oklch(0.72 0.2 145 / 0.35) 0px, transparent 50%),
-                   radial-gradient(at 80% 0%, oklch(0.65 0.24 25 / 0.25) 0px, transparent 50%),
-                   radial-gradient(at 40% 80%, oklch(0.78 0.18 70 / 0.2) 0px, transparent 50%);
-  --shadow-glow: 0 10px 40px -10px oklch(0.72 0.2 145 / 0.5);
-  --shadow-pink: 0 10px 40px -10px oklch(0.65 0.24 25 / 0.5);
-  --shadow-elegant: 0 20px 50px -20px oklch(0.1 0 0 / 0.6);
+  /* All gradients = straight Spotify green → YouTube red */
+  --gradient-primary: linear-gradient(135deg, oklch(0.72 0.19 150), oklch(0.62 0.24 27));
+  --gradient-violet: linear-gradient(135deg, oklch(0.72 0.19 150), oklch(0.62 0.24 27));
+  --gradient-cyan: linear-gradient(135deg, oklch(0.72 0.19 150), oklch(0.62 0.24 27));
+  --gradient-sunset: linear-gradient(135deg, oklch(0.72 0.19 150), oklch(0.62 0.24 27));
+  --gradient-mesh: radial-gradient(at 20% 0%, oklch(0.72 0.19 150 / 0.3) 0px, transparent 50%),
+                   radial-gradient(at 80% 80%, oklch(0.62 0.24 27 / 0.25) 0px, transparent 50%);
+  --shadow-glow: 0 10px 40px -10px oklch(0.72 0.19 150 / 0.5);
+  --shadow-pink: 0 10px 40px -10px oklch(0.62 0.24 27 / 0.5);
+  --shadow-elegant: 0 20px 50px -20px oklch(0.05 0 0 / 0.6);
 }
 
 .dark {
-  --background: oklch(0.17 0.02 60);
+  --background: oklch(0.16 0.005 0);
   --foreground: oklch(0.98 0 0);
-  --card: oklch(0.23 0.025 60);
+  --card: oklch(0.22 0.005 0);
   --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.23 0.025 60);
+  --popover: oklch(0.22 0.005 0);
   --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.72 0.2 145);
-  --primary-foreground: oklch(0.16 0.02 145);
-  --secondary: oklch(0.28 0.02 60);
+  --primary: oklch(0.72 0.19 150);
+  --primary-foreground: oklch(0.16 0.02 150);
+  --secondary: oklch(0.27 0.005 0);
   --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.26 0.02 60);
-  --muted-foreground: oklch(0.72 0.02 60);
-  --accent: oklch(0.32 0.03 50);
+  --muted: oklch(0.25 0.005 0);
+  --muted-foreground: oklch(0.72 0.005 0);
+  --accent: oklch(0.3 0.005 0);
   --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.62 0.24 25);
+  --destructive: oklch(0.62 0.24 27);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.32 0.02 60);
-  --input: oklch(0.3 0.02 60);
-  --ring: oklch(0.72 0.2 145);
-  --sidebar: oklch(0.13 0.02 60);
+  --border: oklch(0.3 0.005 0);
+  --input: oklch(0.28 0.005 0);
+  --ring: oklch(0.72 0.19 150);
+  --sidebar: oklch(0.12 0.005 0);
   --sidebar-foreground: oklch(0.88 0 0);
-  --sidebar-primary: oklch(0.72 0.2 145);
-  --sidebar-primary-foreground: oklch(0.16 0.02 145);
-  --sidebar-accent: oklch(0.24 0.03 50);
+  --sidebar-primary: oklch(0.72 0.19 150);
+  --sidebar-primary-foreground: oklch(0.16 0.02 150);
+  --sidebar-accent: oklch(0.23 0.005 0);
   --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.24 0.02 60);
-  --sidebar-ring: oklch(0.72 0.2 145);
+  --sidebar-border: oklch(0.23 0.005 0);
+  --sidebar-ring: oklch(0.72 0.19 150);
 }
 
 @layer base {
