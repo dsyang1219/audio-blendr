@@ -4,8 +4,9 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Music, Heart, Library, LogOut, Plug, Sparkles } from "lucide-react";
+import { Music, Heart, Library, LogOut, Plug } from "lucide-react";
 import { Player } from "@/components/Player";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
