@@ -23,7 +23,7 @@ function Landing() {
       <header className="container mx-auto flex items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2">
           <Music className="h-7 w-7 text-primary" />
-          <h1 className="text-xl font-bold">Tunemix</h1>
+          <h1 className="text-xl font-bold">Audio Blendr</h1>
         </div>
         <div className="flex gap-2">
           <Link to="/auth">

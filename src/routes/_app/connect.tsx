@@ -209,7 +209,7 @@ function ConnectPage() {
           <CardTitle className="flex items-center gap-2">
             <Youtube className="h-5 w-5 text-red-500" /> Import a YouTube playlist
           </CardTitle>
-          <CardDescription>Paste a YouTube playlist URL to import it as a Tunemix playlist.</CardDescription>
+          <CardDescription>Paste a YouTube playlist URL to import it as an Audio Blendr playlist.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Input

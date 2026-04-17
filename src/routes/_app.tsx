@@ -40,7 +40,7 @@ function AppLayout() {
         <aside className="hidden w-64 flex-col border-r border-sidebar-border bg-sidebar p-4 md:flex">
           <Link to="/" className="mb-6 flex items-center gap-2">
             <Music className="h-6 w-6 text-primary" />
-            <span className="font-bold">Tunemix</span>
+            <span className="font-bold">Audio Blendr</span>
           </Link>
 
           <nav className="space-y-1">
