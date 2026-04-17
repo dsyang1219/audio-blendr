@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { addExistingTrackToPlaylist } from "@/utils/spotify.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
