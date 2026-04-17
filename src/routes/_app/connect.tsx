@@ -139,7 +139,7 @@ function ConnectPage() {
   return (
     <div className="space-y-6 p-8 animate-fade-in">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight">Sync <span className="text-gradient">sources</span></h1>
+        <h1 className="text-4xl font-bold tracking-tight">Sync sources</h1>
         <p className="mt-1 text-muted-foreground">Connect Spotify and add YouTube tracks to build your unified library.</p>
       </div>
 
@@ -147,8 +147,8 @@ function ConnectPage() {
       <Card className="glass border-border/60 hover-lift">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-glow">
-              <Music className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
+              <Music className="h-5 w-5 text-secondary-foreground" />
             </div>
             Spotify
           </CardTitle>
@@ -188,8 +188,8 @@ function ConnectPage() {
       <Card className="glass border-border/60 hover-lift">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-glow">
-              <Youtube className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
+              <Youtube className="h-5 w-5 text-secondary-foreground" />
             </div>
             Add a YouTube video
           </CardTitle>
@@ -214,8 +214,8 @@ function ConnectPage() {
       <Card className="glass border-border/60 hover-lift">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-glow">
-              <Youtube className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
+              <Youtube className="h-5 w-5 text-secondary-foreground" />
             </div>
             Import a YouTube playlist
           </CardTitle>

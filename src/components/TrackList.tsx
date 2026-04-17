@@ -144,8 +144,8 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
                   {t.album_art_url ? (
                     <img src={t.album_art_url} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-violet">
-                      <Music className="h-4 w-4 text-primary-foreground" />
+                    <div className="flex h-full w-full items-center justify-center bg-secondary">
+                      <Music className="h-4 w-4 text-secondary-foreground" />
                     </div>
                   )}
                 </div>

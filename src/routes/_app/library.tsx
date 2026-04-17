@@ -26,7 +26,7 @@ function LibraryPage() {
 
   return (
     <div className="animate-fade-in">
-      <div className="relative bg-gradient-sunset px-8 pb-10 pt-16">
+      <div className="relative bg-secondary px-8 pb-10 pt-16">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
         <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-end">
           <div className="flex h-52 w-52 items-center justify-center rounded-2xl bg-background/20 backdrop-blur-sm shadow-elegant ring-1 ring-white/10">
@@ -47,7 +47,7 @@ function LibraryPage() {
           <p className="text-muted-foreground">Loading…</p>
         ) : tracks.length === 0 ? (
           <div className="glass rounded-2xl p-12 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-sunset shadow-pink">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
               <Heart className="h-8 w-8 fill-primary-foreground text-primary-foreground" />
             </div>
             <p className="text-lg font-semibold">No liked songs yet</p>
