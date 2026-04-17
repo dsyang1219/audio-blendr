@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireServerFnAuth } from "@/utils/server-fn-auth";
 import { createSpotifyState, getSpotifyRedirectUri, parseSpotifyState } from "@/utils/spotify-auth";
+import { searchYouTubeOnce } from "@/utils/youtube.server";
 
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
