@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Music, Youtube, Library, Sparkles } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/")({
   component: Landing,
