@@ -170,19 +170,22 @@ function getRetryDelayMs(retryAfterHeader: string | null, fallbackMs: number) {
   return fallbackMs;
 }
 
-async function spotifyFetch(url: string, accessToken: string, maxRetries = 6): Promise<Response> {
+async function spotifyFetch(url: string, accessToken: string, maxRetries = 2): Promise<Response> {
   let attempt = 0;
-  let delay = 1500;
+  let delay = 800;
 
   while (true) {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (res.status !== 429) return res;
     if (attempt >= maxRetries) return res;
 
-    const waitMs = getRetryDelayMs(res.headers.get("retry-after"), delay + Math.floor(Math.random() * 750));
+    // Cap retry waits to a few seconds so we never block the worker for long.
+    // If Spotify is heavily rate-limiting, we bail and let the user re-trigger
+    // sync — each click resumes from where the previous one stopped.
+    const waitMs = Math.min(getRetryDelayMs(res.headers.get("retry-after"), delay), 4_000);
     console.warn(`Spotify 429, waiting ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
     await wait(waitMs);
-    delay = Math.min(Math.round(delay * 1.8), 60_000);
+    delay = Math.min(Math.round(delay * 1.8), 4_000);
     attempt++;
   }
 }
@@ -439,8 +442,14 @@ export const syncPlaylists = createServerFn({ method: "POST" })
     }
 
     // Filter to only NEW playlists (incremental)
-    const newPlaylists = playlists.filter((p) => !alreadySynced.has(p.id));
-    const skippedCount = playlists.length - newPlaylists.length;
+    const allNewPlaylists = playlists.filter((p) => !alreadySynced.has(p.id));
+    const skippedCount = playlists.length - allNewPlaylists.length;
+
+    // Only process a small batch per request so we never hit the worker timeout.
+    // The user re-clicks "Sync playlists" to continue with the next batch.
+    const BATCH_SIZE = 5;
+    const newPlaylists = allNewPlaylists.slice(0, BATCH_SIZE);
+    const remaining = allNewPlaylists.length - newPlaylists.length;
 
     let inserted = 0;
     let totalTracks = 0;
@@ -451,8 +460,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       if (!rows) {
         if (status === 429) {
           rateLimitedAny = true;
-          await wait(5_000);
-          continue;
+          break;
         }
         // 403 or other: skip this playlist but continue with others
         continue;
@@ -489,20 +497,28 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       totalTracks += rows.length;
     }
 
+    const stillRemaining = remaining + (rateLimitedAny ? newPlaylists.length - inserted : 0);
+    const isPartial = rateLimitedAny || partialReason !== null || stillRemaining > 0;
+
     let message: string | null = null;
-    if (rateLimitedAny) {
-      message = `Spotify slowed the sync down, but Audio Blendr still imported ${inserted} new playlists with ${totalTracks} tracks. Run sync again to continue anything that is still missing.`;
+    if (rateLimitedAny && inserted === 0) {
+      message = `Spotify is rate-limiting right now. ${stillRemaining} playlists left — wait a few seconds and click Sync again.`;
+    } else if (stillRemaining > 0) {
+      message = `Imported ${inserted} playlists (${totalTracks} tracks). ${stillRemaining} more to go — click Sync again to continue.`;
     } else if (partialReason) {
       message = partialReason;
     } else if (inserted === 0 && skippedCount > 0) {
       message = `All ${skippedCount} playlists are already synced — nothing new to import.`;
+    } else if (inserted > 0) {
+      message = `Synced ${inserted} new playlists (${totalTracks} tracks). All caught up!`;
     }
 
     return {
       playlists: inserted,
       tracks: totalTracks,
       skipped: skippedCount,
-      partial: rateLimitedAny || partialReason !== null,
+      remaining: stillRemaining,
+      partial: isPartial,
       message,
     };
   });
