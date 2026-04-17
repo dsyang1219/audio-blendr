@@ -128,33 +128,33 @@ export function Player() {
         {/* Left: now playing */}
         <div className="flex min-w-0 items-center gap-3">
           <div className={cn(
-            "h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-muted shadow-elegant transition-transform",
+            "h-11 w-11 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-lg bg-muted shadow-elegant transition-transform",
             isPlaying && "animate-float"
           )}>
             {current?.album_art_url ? (
               <img src={current.album_art_url} alt="" className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-secondary">
-                <Music className="h-6 w-6 text-secondary-foreground" />
+                <Music className="h-5 w-5 sm:h-6 sm:w-6 text-secondary-foreground" />
               </div>
             )}
           </div>
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">{current?.title ?? "Nothing playing"}</div>
-            <div className="truncate text-xs text-muted-foreground">{current?.artist ?? "Pick a song from your library"}</div>
+            <div className="truncate text-xs sm:text-sm font-semibold">{current?.title ?? "Nothing playing"}</div>
+            <div className="truncate text-[11px] sm:text-xs text-muted-foreground">{current?.artist ?? "Pick a song from your library"}</div>
             {current?.album && (
-              <div className="truncate text-[11px] text-muted-foreground/70">{current.album}</div>
+              <div className="hidden sm:block truncate text-[11px] text-muted-foreground/70">{current.album}</div>
             )}
           </div>
         </div>
 
         {/* Center: controls */}
-        <div className="flex flex-col items-center gap-1">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col items-center gap-1 md:order-none order-last md:col-auto col-span-2">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={toggleShuffle}
               className={cn(
-                "transition hover:text-foreground",
+                "hidden sm:inline-flex transition hover:text-foreground",
                 shuffle ? "text-primary" : "text-muted-foreground"
               )}
               aria-label="Toggle shuffle"
@@ -162,26 +162,26 @@ export function Player() {
             >
               <Shuffle className="h-4 w-4" />
             </button>
-            <button onClick={playPrev} className="text-muted-foreground hover:text-foreground" aria-label="Previous">
+            <button onClick={playPrev} className="hidden sm:inline-flex text-muted-foreground hover:text-foreground" aria-label="Previous">
               <SkipBack className="h-5 w-5" />
             </button>
             <button
               onClick={() => setIsPlaying(!isPlaying)}
               disabled={!current}
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-all hover:scale-110 active:scale-95 disabled:opacity-40 disabled:hover:scale-100",
+                "hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-all hover:scale-110 active:scale-95 disabled:opacity-40 disabled:hover:scale-100",
                 isPlaying && "animate-pulse-glow"
               )}
               aria-label={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
             </button>
-            <button onClick={playNext} className="text-muted-foreground hover:text-foreground" aria-label="Next">
+            <button onClick={playNext} className="hidden sm:inline-flex text-muted-foreground hover:text-foreground" aria-label="Next">
               <SkipForward className="h-5 w-5" />
             </button>
           </div>
-          <div className="flex w-full max-w-md items-center gap-2 text-xs text-muted-foreground">
-            <span className="w-9 text-right tabular-nums">{fmt(progress)}</span>
+          <div className="flex w-full max-w-md items-center gap-2 text-[10px] sm:text-xs text-muted-foreground">
+            <span className="w-8 sm:w-9 text-right tabular-nums">{fmt(progress)}</span>
             <Slider
               value={[duration ? (progress / duration) * 100 : 0]}
               onValueChange={(v) => {
@@ -209,19 +209,32 @@ export function Player() {
               step={0.5}
               className="flex-1"
             />
-            <span className="w-9 tabular-nums">{fmt(duration)}</span>
+            <span className="w-8 sm:w-9 tabular-nums">{fmt(duration)}</span>
           </div>
         </div>
 
-        {/* Right: volume */}
+        {/* Right: mobile play button + desktop volume */}
         <div className="flex items-center justify-end gap-2">
-          <Volume2 className="h-4 w-4 text-muted-foreground" />
+          {/* Mobile-only play button */}
+          <button
+            onClick={() => setIsPlaying(!isPlaying)}
+            disabled={!current}
+            className={cn(
+              "md:hidden flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-all active:scale-95 disabled:opacity-40",
+              isPlaying && "animate-pulse-glow"
+            )}
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
+          </button>
+          {/* Desktop volume */}
+          <Volume2 className="hidden md:inline-block h-4 w-4 text-muted-foreground" />
           <Slider
             value={[volume]}
             onValueChange={(v) => setVolume(v[0])}
             max={100}
             step={1}
-            className="w-32"
+            className="hidden md:flex w-32"
           />
         </div>
       </div>
