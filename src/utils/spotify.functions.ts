@@ -434,11 +434,9 @@ export const syncPlaylists = createServerFn({ method: "POST" })
           break;
         }
         // 403 or other: skip this playlist but continue with others
-        await pause(500);
         continue;
       }
       if (rows.length === 0) {
-        await pause(250);
         continue;
       }
 
@@ -468,7 +466,6 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       }
       inserted++;
       totalTracks += rows.length;
-      await pause(1000);
     }
 
     let message: string | null = null;
