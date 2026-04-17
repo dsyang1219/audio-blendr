@@ -24,6 +24,7 @@ interface PlayerContextValue {
   playQueue: (tracks: Track[], startIndex?: number, opts?: { shuffle?: boolean }) => void;
   playNext: () => void;
   playPrev: () => void;
+  setTrackVideoId: (trackId: string, videoId: string) => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
