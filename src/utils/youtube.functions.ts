@@ -120,7 +120,7 @@ export const resolveYouTube = createServerFn({ method: "POST" })
     }
 
     if (videoId) {
-      await supabaseAdmin.from(data.table).update({ youtube_video_id: videoId }).eq("id", row.id);
+      await supabase.from(data.table).update({ youtube_video_id: videoId }).eq("id", row.id);
       return { videoId };
     }
 
