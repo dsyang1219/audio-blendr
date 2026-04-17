@@ -170,20 +170,22 @@ function getRetryDelayMs(retryAfterHeader: string | null, fallbackMs: number) {
   return fallbackMs;
 }
 
-async function spotifyFetch(url: string, accessToken: string, maxRetries = 3): Promise<Response> {
+async function spotifyFetch(url: string, accessToken: string, maxRetries = 1): Promise<Response> {
   let attempt = 0;
-  let delay = 1500;
+  let delay = 800;
 
   while (true) {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (res.status !== 429) return res;
     if (attempt >= maxRetries) return res;
 
-    // Respect Spotify's Retry-After header up to 8s; otherwise back off gently.
-    const waitMs = Math.min(getRetryDelayMs(res.headers.get("retry-after"), delay), 8_000);
+    // Single quick retry only — long waits exceed the edge function timeout.
+    // Cap at 2s; if Spotify wants longer, surface the 429 to the caller.
+    const headerWait = getRetryDelayMs(res.headers.get("retry-after"), delay);
+    const waitMs = Math.min(headerWait, 2_000);
     console.warn(`Spotify 429, waiting ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
     await wait(waitMs);
-    delay = Math.min(Math.round(delay * 2), 8_000);
+    delay = Math.min(Math.round(delay * 2), 2_000);
     attempt++;
   }
 }
