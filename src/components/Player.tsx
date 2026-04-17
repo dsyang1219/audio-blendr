@@ -266,12 +266,21 @@ export function Player() {
           <YouTube
             videoId={videoId}
             opts={{
-              playerVars: { autoplay: 1, controls: 0, modestbranding: 1 },
+              playerVars: { autoplay: 1, controls: 0, modestbranding: 1, playsinline: 1 },
             }}
             onReady={(e) => {
               playerRef.current = e.target;
               try { e.target.setVolume(volume); } catch { /* ignore */ }
-              if (isPlaying) e.target.playVideo();
+              try { e.target.playVideo(); } catch { /* ignore */ }
+              setIsPlaying(true);
+            }}
+            onStateChange={(e) => {
+              // YT.PlayerState: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
+              const state = (e as unknown as { data: number }).data;
+              if (state === 5 || state === -1) {
+                // Cued or unstarted after a video swap — kick playback
+                try { e.target.playVideo(); } catch { /* ignore */ }
+              }
             }}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
