@@ -59,6 +59,7 @@ function ConnectPage() {
     try {
       const { url } = await getAuthUrlFn({ data: { origin: window.location.origin } });
       openSpotifyAuth(url);
+      setBusy(null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to start Spotify auth");
       setBusy(null);
