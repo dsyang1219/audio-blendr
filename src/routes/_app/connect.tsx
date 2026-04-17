@@ -34,6 +34,23 @@ function ConnectPage() {
   const disconnectFn = useServerFn(disconnectSpotify);
   const importPlaylistFn = useServerFn(importYouTubePlaylist);
   const addVideoFn = useServerFn(addYouTubeVideo);
+  const batchResolveFn = useServerFn(batchResolveYouTube);
+
+  const runBatchResolve = async (silent = false) => {
+    try {
+      const r = await batchResolveFn({ data: {} });
+      if (r.total === 0) {
+        if (!silent) toast.success("All tracks already resolved");
+        return;
+      }
+      const msg = `Resolved ${r.resolved}/${r.attempted} YouTube IDs · ${r.remaining} left`;
+      if (r.quotaHit) toast.warning(`${msg} (daily quota hit)`);
+      else if (r.remaining > 0) toast.success(`${msg} — run again later for more`);
+      else toast.success(msg);
+    } catch (e) {
+      if (!silent) toast.error(e instanceof Error ? e.message : "Resolve failed");
+    }
+  };
 
   useEffect(() => {
     getStatusFn().then(setStatus).catch(() => setStatus({ connected: false, displayName: null }));
