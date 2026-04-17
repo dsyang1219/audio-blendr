@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Music, Heart, Library, LogOut, Plug } from "lucide-react";
+import { Music, Heart, Library, LogOut, Plug, Sparkles } from "lucide-react";
 import { Player } from "@/components/Player";
 
 export const Route = createFileRoute("/_app")({
@@ -37,33 +37,45 @@ function AppLayout() {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <div className="flex flex-1 overflow-hidden">
-        <aside className="hidden w-64 flex-col border-r border-sidebar-border bg-sidebar p-4 md:flex">
-          <Link to="/" className="mb-6 flex items-center gap-2">
-            <Music className="h-6 w-6 text-primary" />
-            <span className="font-bold">Audio Blendr</span>
+        <aside className="hidden w-64 flex-col border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl p-4 md:flex">
+          <Link to="/" className="group mb-6 flex items-center gap-2.5 px-2">
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-glow transition-transform group-hover:scale-105">
+              <Sparkles className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-bold tracking-tight text-gradient">Audio Blendr</span>
           </Link>
 
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             <NavItem to="/library" icon={<Heart className="h-4 w-4" />}>Liked Songs</NavItem>
             <NavItem to="/playlists" icon={<Library className="h-4 w-4" />}>Playlists</NavItem>
             <NavItem to="/connect" icon={<Plug className="h-4 w-4" />}>Spotify Sync</NavItem>
           </nav>
 
           <div className="mt-6 border-t border-sidebar-border pt-4">
-            <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your Playlists</p>
+            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Your Playlists</p>
             <ScrollArea className="h-[calc(100vh-26rem)]">
-              <div className="space-y-1">
+              <div className="space-y-0.5 pr-2">
                 {playlists.length === 0 && (
-                  <p className="px-2 text-xs text-muted-foreground">Sync from Spotify to see your playlists here.</p>
+                  <p className="px-3 text-xs text-muted-foreground">Sync from Spotify to see your playlists here.</p>
                 )}
                 {playlists.map((p) => (
                   <Link
                     key={p.id}
                     to="/playlists/$id"
                     params={{ id: p.id }}
-                    className="block truncate rounded px-2 py-1 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
+                    activeProps={{ className: "bg-sidebar-accent text-foreground" }}
+                    className="flex items-center gap-2 truncate rounded-lg px-3 py-1.5 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
                   >
-                    {p.name}
+                    <div className="h-6 w-6 flex-shrink-0 overflow-hidden rounded bg-muted">
+                      {p.cover_url ? (
+                        <img src={p.cover_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-violet">
+                          <Music className="h-3 w-3 text-primary-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="truncate">{p.name}</span>
                   </Link>
                 ))}
               </div>
@@ -71,7 +83,12 @@ function AppLayout() {
           </div>
 
           <div className="mt-auto pt-4">
-            <div className="mb-2 truncate px-2 text-xs text-muted-foreground">{user.email}</div>
+            <div className="mb-2 flex items-center gap-2 rounded-lg bg-sidebar-accent/50 px-3 py-2">
+              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xs font-bold text-primary-foreground">
+                {(user.email?.[0] ?? "U").toUpperCase()}
+              </div>
+              <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+            </div>
             <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => signOut()}>
               <LogOut className="mr-2 h-4 w-4" /> Sign out
             </Button>
@@ -92,8 +109,8 @@ function NavItem({ to, icon, children }: { to: string; icon: React.ReactNode; ch
   return (
     <Link
       to={to}
-      activeProps={{ className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
-      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent"
+      activeProps={{ className: "bg-gradient-primary text-primary-foreground shadow-glow" }}
+      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-foreground"
     >
       {icon}
       {children}

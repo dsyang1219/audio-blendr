@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -22,14 +22,17 @@ function AuthPage() {
   }, [user, loading, navigate]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md">
-        <Link to="/" className="mb-8 flex items-center justify-center gap-2">
-          <Music className="h-7 w-7 text-primary" />
-          <span className="text-xl font-bold">Audio Blendr</span>
+    <div className="relative flex min-h-screen items-center justify-center px-4">
+      <div className="absolute inset-0 -z-10 bg-gradient-mesh" />
+      <div className="w-full max-w-md animate-scale-in">
+        <Link to="/" className="mb-8 flex items-center justify-center gap-2.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+            <Sparkles className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <span className="text-2xl font-bold tracking-tight text-gradient">Audio Blendr</span>
         </Link>
 
-        <div className="rounded-xl border border-border bg-card p-6 shadow-lg">
+        <div className="glass rounded-2xl p-6 shadow-elegant">
           <Tabs defaultValue="signin">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign in</TabsTrigger>
@@ -82,7 +85,7 @@ function SignInForm() {
         <Label htmlFor="si-pw">Password</Label>
         <Input id="si-pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
-      <Button type="submit" className="w-full" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
+      <Button type="submit" className="w-full bg-gradient-primary shadow-glow hover:shadow-pink hover:scale-[1.02] transition-all" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
     </form>
   );
 }
@@ -123,7 +126,7 @@ function SignUpForm() {
         <Label htmlFor="su-pw">Password</Label>
         <Input id="su-pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
-      <Button type="submit" className="w-full" disabled={busy}>{busy ? "Creating…" : "Create account"}</Button>
+      <Button type="submit" className="w-full bg-gradient-primary shadow-glow hover:shadow-pink hover:scale-[1.02] transition-all" disabled={busy}>{busy ? "Creating…" : "Create account"}</Button>
     </form>
   );
 }

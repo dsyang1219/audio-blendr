@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Music, Youtube, Library } from "lucide-react";
+import { Music, Youtube, Library, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -19,55 +19,60 @@ function Landing() {
   }, [user, loading, navigate]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="relative min-h-screen overflow-hidden text-foreground">
+      <div className="absolute inset-0 -z-10 bg-gradient-mesh" />
       <header className="container mx-auto flex items-center justify-between px-6 py-6">
-        <div className="flex items-center gap-2">
-          <Music className="h-7 w-7 text-primary" />
-          <h1 className="text-xl font-bold">Audio Blendr</h1>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+            <Sparkles className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-gradient">Audio Blendr</h1>
         </div>
         <div className="flex gap-2">
-          <Link to="/auth">
-            <Button variant="ghost">Sign in</Button>
-          </Link>
-          <Link to="/auth">
-            <Button>Get started</Button>
-          </Link>
+          <Link to="/auth"><Button variant="ghost">Sign in</Button></Link>
+          <Link to="/auth"><Button className="bg-gradient-primary shadow-glow hover:shadow-pink hover:scale-105 transition-all">Get started</Button></Link>
         </div>
       </header>
 
       <main className="container mx-auto px-6 py-20">
-        <section className="mx-auto max-w-3xl text-center">
-          <h2 className="text-5xl font-bold tracking-tight md:text-6xl">
-            Your <span className="text-primary">Spotify library</span>,
+        <section className="mx-auto max-w-3xl text-center animate-fade-in">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            Built for music lovers, free forever
+          </div>
+          <h2 className="text-5xl font-bold tracking-tight md:text-7xl">
+            Your <span className="text-gradient">Spotify library</span>,
             <br />playing on YouTube.
           </h2>
-          <p className="mt-6 text-lg text-muted-foreground">
+          <p className="mt-6 text-lg text-muted-foreground md:text-xl">
             Connect your Spotify account, sync your liked songs and playlists, and stream every track via YouTube — all in one beautiful player.
           </p>
           <div className="mt-10 flex justify-center gap-3">
             <Link to="/auth">
-              <Button size="lg" className="text-base">Get started — it's free</Button>
+              <Button size="lg" className="bg-gradient-primary text-base shadow-glow hover:shadow-pink hover:scale-105 transition-all">
+                Get started — it's free
+              </Button>
             </Link>
           </div>
         </section>
 
         <section className="mx-auto mt-24 grid max-w-4xl gap-6 md:grid-cols-3">
-          <FeatureCard icon={<Music className="h-6 w-6" />} title="Connect Spotify" desc="Link your Spotify account in one click to access your library." />
-          <FeatureCard icon={<Library className="h-6 w-6" />} title="Sync everything" desc="Import liked songs and playlists with track metadata and artwork." />
-          <FeatureCard icon={<Youtube className="h-6 w-6" />} title="Play via YouTube" desc="Stream every song from YouTube — no Spotify Premium required." />
+          <FeatureCard gradient="bg-gradient-primary" icon={<Music className="h-6 w-6" />} title="Connect Spotify" desc="Link your Spotify account in one click to access your library." />
+          <FeatureCard gradient="bg-gradient-violet" icon={<Library className="h-6 w-6" />} title="Sync everything" desc="Import liked songs and playlists with track metadata and artwork." />
+          <FeatureCard gradient="bg-gradient-sunset" icon={<Youtube className="h-6 w-6" />} title="Play via YouTube" desc="Stream every song from YouTube — no Spotify Premium required." />
         </section>
       </main>
     </div>
   );
 }
 
-function FeatureCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+function FeatureCard({ icon, title, desc, gradient }: { icon: React.ReactNode; title: string; desc: string; gradient: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-6">
-      <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+    <div className="hover-lift glass rounded-2xl p-6 animate-scale-in">
+      <div className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl ${gradient} text-primary-foreground shadow-glow`}>
         {icon}
       </div>
-      <h3 className="font-semibold">{title}</h3>
+      <h3 className="text-lg font-semibold">{title}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
     </div>
   );

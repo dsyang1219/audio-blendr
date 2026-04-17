@@ -102,8 +102,8 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card/40">
-      <div className="grid grid-cols-[3rem_1fr_1fr_4rem_2.5rem] items-center gap-4 border-b border-border px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="overflow-hidden rounded-2xl glass">
+      <div className="grid grid-cols-[3rem_1fr_1fr_4rem_2.5rem] items-center gap-4 border-b border-border/60 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
         <span className="text-center">#</span>
         <span>Title</span>
         <span className="hidden md:block">Album</span>
@@ -120,8 +120,8 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
               onMouseLeave={() => setHover(null)}
               onDoubleClick={() => playQueue(queueTracks, i)}
               className={cn(
-                "grid cursor-pointer grid-cols-[3rem_1fr_1fr_4rem_2.5rem] items-center gap-4 px-4 py-2 text-sm hover:bg-accent/40",
-                isCurrent && "text-primary"
+                "group grid cursor-pointer grid-cols-[3rem_1fr_1fr_4rem_2.5rem] items-center gap-4 border-b border-border/30 px-4 py-2.5 text-sm transition-colors last:border-b-0 hover:bg-accent/40",
+                isCurrent && "bg-primary/10 text-primary"
               )}
             >
               <span className="flex justify-center text-muted-foreground">
@@ -134,18 +134,18 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
                     <Play className="h-4 w-4 fill-current" />
                   </button>
                 ) : isCurrent ? (
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-primary shadow-glow" />
                 ) : (
                   <span>{i + 1}</span>
                 )}
               </span>
               <div className="flex min-w-0 items-center gap-3">
-                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded bg-muted">
+                <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-muted shadow-elegant">
                   {t.album_art_url ? (
                     <img src={t.album_art_url} alt="" className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <Music className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-violet">
+                      <Music className="h-4 w-4 text-primary-foreground" />
                     </div>
                   )}
                 </div>

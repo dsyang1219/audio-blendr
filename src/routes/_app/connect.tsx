@@ -137,17 +137,20 @@ function ConnectPage() {
   };
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="space-y-6 p-8 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold">Sync sources</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Sync <span className="text-gradient">sources</span></h1>
         <p className="mt-1 text-muted-foreground">Connect Spotify and add YouTube tracks to build your unified library.</p>
       </div>
 
       {/* Spotify */}
-      <Card>
+      <Card className="glass border-border/60 hover-lift">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Music className="h-5 w-5 text-primary" /> Spotify
+          <CardTitle className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary shadow-glow">
+              <Music className="h-5 w-5 text-primary-foreground" />
+            </div>
+            Spotify
           </CardTitle>
           <CardDescription>
             {status?.connected
@@ -182,10 +185,13 @@ function ConnectPage() {
       </Card>
 
       {/* YouTube single video */}
-      <Card>
+      <Card className="glass border-border/60 hover-lift">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Youtube className="h-5 w-5 text-red-500" /> Add a YouTube video
+          <CardTitle className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-pink-500 shadow-pink">
+              <Youtube className="h-5 w-5 text-white" />
+            </div>
+            Add a YouTube video
           </CardTitle>
           <CardDescription>Paste a YouTube link to add it as a liked song.</CardDescription>
         </CardHeader>
@@ -205,10 +211,13 @@ function ConnectPage() {
       </Card>
 
       {/* YouTube playlist */}
-      <Card>
+      <Card className="glass border-border/60 hover-lift">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Youtube className="h-5 w-5 text-red-500" /> Import a YouTube playlist
+          <CardTitle className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-pink-500 shadow-pink">
+              <Youtube className="h-5 w-5 text-white" />
+            </div>
+            Import a YouTube playlist
           </CardTitle>
           <CardDescription>Paste a YouTube playlist URL to import it as an Audio Blendr playlist.</CardDescription>
         </CardHeader>
