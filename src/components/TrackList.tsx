@@ -40,7 +40,7 @@ function fmt(seconds?: number | null) {
 }
 
 export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrackRemoved }: TrackListProps) {
-  const { playQueue, current } = usePlayer();
+  const { playQueue, current, shuffle } = usePlayer();
   const { user } = useAuth();
   const [hover, setHover] = useState<string | null>(null);
   const [userPlaylists, setUserPlaylists] = useState<UserPlaylist[]>([]);
