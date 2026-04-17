@@ -234,6 +234,86 @@ export const syncLikedSongs = createServerFn({ method: "POST" })
     return { count: tracks.length };
   });
 
+export const searchSpotifyTracks = createServerFn({ method: "POST" })
+  .middleware([requireServerFnAuth])
+  .inputValidator((d: { query: string }) => d)
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
+    const supabase = context.supabase;
+    const accessToken = await refreshSpotifyToken(supabase, userId);
+    const q = data.query.trim();
+    if (!q) return { results: [] };
+
+    const url = `${SPOTIFY_API}/search?q=${encodeURIComponent(q)}&type=track&limit=10`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!res.ok) {
+      console.error("Spotify search failed", res.status, await res.text());
+      throw new Error("Spotify search failed");
+    }
+    const json = (await res.json()) as { tracks: { items: SpotifyTrackObj[] } };
+    return { results: json.tracks.items.map(mapTrack) };
+  });
+
+export const addSpotifyTrackToPlaylist = createServerFn({ method: "POST" })
+  .middleware([requireServerFnAuth])
+  .inputValidator(
+    (d: {
+      playlistId?: string;
+      spotify_track_id: string;
+      title: string;
+      artist: string;
+      album: string | null;
+      album_art_url: string | null;
+      duration_seconds: number;
+    }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
+    const supabase = context.supabase;
+
+    if (data.playlistId) {
+      const { data: pl } = await supabase
+        .from("playlists")
+        .select("id, user_id")
+        .eq("id", data.playlistId)
+        .maybeSingle();
+      if (!pl || pl.user_id !== userId) throw new Error("Playlist not found");
+
+      const { count } = await supabase
+        .from("playlist_tracks")
+        .select("id", { count: "exact", head: true })
+        .eq("playlist_id", data.playlistId);
+
+      const { error } = await supabase.from("playlist_tracks").insert({
+        user_id: userId,
+        playlist_id: data.playlistId,
+        title: data.title,
+        artist: data.artist,
+        album: data.album,
+        album_art_url: data.album_art_url,
+        spotify_track_id: data.spotify_track_id,
+        duration_seconds: data.duration_seconds,
+        source: "spotify",
+        position: count ?? 0,
+      });
+      if (error) throw new Error(error.message);
+      return { title: data.title };
+    }
+
+    const { error } = await supabase.from("liked_tracks").insert({
+      user_id: userId,
+      title: data.title,
+      artist: data.artist,
+      album: data.album,
+      album_art_url: data.album_art_url,
+      spotify_track_id: data.spotify_track_id,
+      duration_seconds: data.duration_seconds,
+      source: "spotify",
+    });
+    if (error) throw new Error(error.message);
+    return { title: data.title };
+  });
+
 export const syncPlaylists = createServerFn({ method: "POST" })
   .middleware([requireServerFnAuth])
   .handler(async ({ context }) => {
