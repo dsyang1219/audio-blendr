@@ -5,6 +5,7 @@ import { TrackList } from "@/components/TrackList";
 import { Heart, Play, Shuffle } from "lucide-react";
 import type { Track } from "@/lib/player-context";
 import { usePlayer } from "@/lib/player-context";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AddSongDialog } from "@/components/AddSongDialog";
 
