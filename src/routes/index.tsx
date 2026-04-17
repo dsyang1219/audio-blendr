@@ -35,7 +35,7 @@ function Landing() {
         <section className="mx-auto max-w-3xl text-center animate-fade-in">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium">
             <Bird className="h-3.5 w-3.5 text-primary" />
-            Built for music lovers, free forever
+            Built for Maddy
           </div>
           <h2 className="text-5xl font-bold tracking-tight md:text-7xl">
             Your <span className="text-gradient">Spotify library</span>,
