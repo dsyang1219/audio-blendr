@@ -66,7 +66,7 @@ function Landing() {
 function FeatureCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
     <div className="hover-lift glass rounded-2xl p-6 animate-scale-in">
-      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow">
+      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
         {icon}
       </div>
       <h3 className="text-lg font-semibold">{title}</h3>
