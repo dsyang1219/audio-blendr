@@ -49,10 +49,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const playQueue = (tracks: Track[], startIndex = 0, opts?: { shuffle?: boolean }) => {
     const useShuffle = opts?.shuffle ?? false;
     if (useShuffle) {
-      // Put the chosen track first, then shuffle the rest
-      const chosen = tracks[startIndex];
-      const rest = tracks.filter((_, i) => i !== startIndex);
-      const shuffled = chosen ? [chosen, ...shuffleArray(rest)] : shuffleArray(tracks);
+      // Fully randomize — pick a random starting track too
+      const shuffled = shuffleArray(tracks);
       setQueue(shuffled);
       setCurrentIndex(0);
       setShuffle(true);
@@ -74,13 +72,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const toggleShuffle = () => {
     setShuffle((prev) => {
       const next = !prev;
-      if (next && queue.length > 1 && currentIndex >= 0) {
-        // Shuffle the upcoming tracks, keep current in place
-        const currentTrack = queue[currentIndex];
-        const upcoming = queue.slice(currentIndex + 1);
-        const shuffled = shuffleArray(upcoming);
-        const newQueue = [...queue.slice(0, currentIndex), currentTrack, ...shuffled];
-        setQueue(newQueue);
+      if (next && queue.length > 1) {
+        // Reshuffle upcoming tracks. If something is playing, keep it as current.
+        if (currentIndex >= 0) {
+          const currentTrack = queue[currentIndex];
+          const rest = queue.filter((_, i) => i !== currentIndex);
+          const shuffled = shuffleArray(rest);
+          setQueue([currentTrack, ...shuffled]);
+          setCurrentIndex(0);
+        } else {
+          setQueue((q) => shuffleArray(q));
+        }
       }
       return next;
     });
