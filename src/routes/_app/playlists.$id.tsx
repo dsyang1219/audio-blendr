@@ -45,7 +45,7 @@ function PlaylistDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { playQueue } = usePlayer();
+  const { playQueue, shuffle, toggleShuffle } = usePlayer();
   const [playlist, setPlaylist] = useState<PlaylistMeta | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
