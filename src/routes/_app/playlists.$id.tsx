@@ -192,7 +192,10 @@ function PlaylistDetail() {
   if (!playlist) return <div className="p-8 text-muted-foreground">Playlist not found</div>;
 
   const isCustom = playlist.source === "custom";
+  const isYouTube = playlist.source === "youtube";
   const isSpotifyLinked = playlist.source === "spotify" && !!playlist.spotify_playlist_id;
+  // Custom and YouTube-imported playlists are user-owned and fully editable.
+  const isEditable = isCustom || isYouTube;
 
   // Neutral hero background — no gradient
   const heroGradient = "bg-secondary";
@@ -239,12 +242,12 @@ function PlaylistDetail() {
             {tracks.length === 0 ? "Sync from Spotify" : "Re-sync from Spotify"}
           </Button>
         )}
-        {isCustom && (
+        {isEditable && (
           <Button onClick={openEdit} variant="outline" size="lg" className="gap-2">
             <Pencil className="h-4 w-4" /> Edit
           </Button>
         )}
-        {isCustom && (
+        {isEditable && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="lg" className="gap-2">
@@ -344,7 +347,7 @@ function PlaylistDetail() {
           tracks={tracks}
           table="playlist_tracks"
           playlistId={id}
-          isCustomPlaylist={isCustom}
+          isCustomPlaylist={isEditable}
           onTrackRemoved={load}
         />
       )}
