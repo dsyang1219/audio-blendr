@@ -1,10 +1,15 @@
+import { useId } from "react";
 import { cn } from "@/lib/utils";
 
 /**
  * Audio Blendr brand mark — two interlocking sound waves forming a "blend".
  * Renders as an inline SVG so it inherits color and scales crisply.
+ * Uses useId() so multiple instances on the same page don't collide on gradient IDs.
  */
 export function LogoMark({ className }: { className?: string }) {
+  const uid = useId().replace(/:/g, "");
+  const gradA = `ab-grad-a-${uid}`;
+  const gradB = `ab-grad-b-${uid}`;
   return (
     <svg
       viewBox="0 0 40 40"
@@ -14,23 +19,23 @@ export function LogoMark({ className }: { className?: string }) {
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id="ab-grad-a" x1="0" y1="20" x2="40" y2="20" gradientUnits="userSpaceOnUse">
+        <linearGradient id={gradA} x1="0" y1="20" x2="40" y2="20" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="oklch(0.8 0.16 245)" />
           <stop offset="100%" stopColor="oklch(0.72 0.18 250)" />
         </linearGradient>
-        <linearGradient id="ab-grad-b" x1="0" y1="20" x2="40" y2="20" gradientUnits="userSpaceOnUse">
+        <linearGradient id={gradB} x1="0" y1="20" x2="40" y2="20" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="oklch(0.72 0.18 250)" />
           <stop offset="100%" stopColor="oklch(0.6 0.22 305)" />
         </linearGradient>
       </defs>
       {/* Left wave bars — cool blue side of the blend */}
-      <rect x="6"  y="16" width="3" height="8"  rx="1.5" fill="url(#ab-grad-a)" />
-      <rect x="11" y="11" width="3" height="18" rx="1.5" fill="url(#ab-grad-a)" />
-      <rect x="16" y="6"  width="3" height="28" rx="1.5" fill="url(#ab-grad-a)" />
+      <rect x="6"  y="16" width="3" height="8"  rx="1.5" fill={`url(#${gradA})`} />
+      <rect x="11" y="11" width="3" height="18" rx="1.5" fill={`url(#${gradA})`} />
+      <rect x="16" y="6"  width="3" height="28" rx="1.5" fill={`url(#${gradA})`} />
       {/* Right wave bars — blue→red blend */}
-      <rect x="21" y="6"  width="3" height="28" rx="1.5" fill="url(#ab-grad-b)" />
-      <rect x="26" y="11" width="3" height="18" rx="1.5" fill="url(#ab-grad-b)" />
-      <rect x="31" y="16" width="3" height="8"  rx="1.5" fill="url(#ab-grad-b)" />
+      <rect x="21" y="6"  width="3" height="28" rx="1.5" fill={`url(#${gradB})`} />
+      <rect x="26" y="11" width="3" height="18" rx="1.5" fill={`url(#${gradB})`} />
+      <rect x="31" y="16" width="3" height="8"  rx="1.5" fill={`url(#${gradB})`} />
     </svg>
   );
 }
