@@ -165,14 +165,16 @@ async function spotifyFetch(url: string, accessToken: string, maxRetries = 4): P
     if (res.status !== 429) return res;
     if (attempt >= maxRetries) return res;
     const retryAfter = Number(res.headers.get("retry-after"));
-    const wait = Number.isFinite(retryAfter) && retryAfter > 0
-      ? Math.min(retryAfter * 1000, 10_000)
-      : delay;
+    const wait = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter * 1000, 30_000) : delay;
     console.warn(`Spotify 429, waiting ${wait}ms (attempt ${attempt + 1}/${maxRetries})`);
     await new Promise((r) => setTimeout(r, wait));
-    delay *= 2;
+    delay = Math.min(delay * 2, 30_000);
     attempt++;
   }
+}
+
+async function pause(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 interface SpotifyTrackObj {
@@ -339,6 +341,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
     const playlists: { id: string; name: string; description: string | null; image: string | null }[] = [];
     let plUrl: string | null = `${SPOTIFY_API}/me/playlists?limit=50`;
     let pageCount = 0;
+    let partialReason: string | null = null;
     while (plUrl && pageCount < 20) {
       const res: Response = await spotifyFetch(plUrl, accessToken);
       if (!res.ok) {
@@ -349,11 +352,13 @@ export const syncPlaylists = createServerFn({ method: "POST" })
             throw new Error("Spotify session expired — please reconnect on the Connect page");
           }
           if (res.status === 429) {
-            throw new Error("Spotify rate limit hit — please try again in a minute");
+            return { playlists: 0, tracks: 0, partial: true, message: "Spotify is rate-limiting requests right now — please wait a minute and try again." };
           }
           throw new Error(`Spotify returned ${res.status} when fetching your playlists`);
         }
-        // partial success — stop paginating but keep what we have
+        partialReason = res.status === 429
+          ? "Spotify rate-limited some playlist pages, so only part of your library was synced."
+          : `Spotify stopped returning playlist pages (${res.status}), so only part of your library was synced.`;
         break;
       }
       const json = (await res.json()) as {
@@ -370,6 +375,9 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       }
       plUrl = json.next;
       pageCount++;
+      if (plUrl) {
+        await pause(300);
+      }
     }
 
     const syncedPlaylists: {
@@ -383,6 +391,10 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       const tRes = await spotifyFetch(`${SPOTIFY_API}/playlists/${p.id}/tracks?limit=100`, accessToken);
       if (!tRes.ok) {
         console.error("Fetch playlist tracks failed", p.id, tRes.status, await tRes.text());
+        if (tRes.status === 429 && !partialReason) {
+          partialReason = "Spotify rate-limited some playlist track imports, so only accessible playlists were synced.";
+        }
+        await pause(500);
         continue;
       }
 
@@ -392,6 +404,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
         .filter((x): x is NonNullable<typeof x> => !!x);
 
       if (rows.length === 0) {
+        await pause(250);
         continue;
       }
 
@@ -401,6 +414,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
         image: p.image,
         rows,
       });
+      await pause(500);
     }
 
     const { data: existingPlaylists } = await supabase.from("playlists").select("id").eq("user_id", userId);

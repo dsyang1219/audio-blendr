@@ -88,8 +88,17 @@ function ConnectPage() {
   const syncAll = async () => {
     setBusy("playlists");
     try {
-      const r = await syncPlaylistsFn();
-      toast.success(`Synced ${r.playlists} playlists, ${r.tracks} tracks`);
+      const r = (await syncPlaylistsFn()) as {
+        playlists: number;
+        tracks: number;
+        partial?: boolean;
+        message?: string;
+      };
+      if (r.partial) {
+        toast.warning(r.message ?? `Synced ${r.playlists} playlists, ${r.tracks} tracks with some limits from Spotify`);
+      } else {
+        toast.success(`Synced ${r.playlists} playlists, ${r.tracks} tracks`);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to sync");
     }
