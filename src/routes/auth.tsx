@@ -25,11 +25,8 @@ function AuthPage() {
     <div className="relative flex min-h-screen items-center justify-center px-4">
       <div className="absolute inset-0 -z-10 bg-gradient-mesh" />
       <div className="w-full max-w-md animate-scale-in">
-        <Link to="/" className="mb-8 flex items-center justify-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="text-2xl font-bold tracking-tight text-gradient">Audio Blendr</span>
+        <Link to="/" className="mb-8 flex justify-center">
+          <Logo size="lg" />
         </Link>
 
         <div className="glass rounded-2xl p-6 shadow-elegant">
