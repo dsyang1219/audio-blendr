@@ -109,8 +109,8 @@ function SettingsPage() {
       <Card className="glass border-border/60">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-glow">
-              <Plug className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
+              <Plug className="h-5 w-5 text-secondary-foreground" />
             </div>
             Connections
           </CardTitle>
