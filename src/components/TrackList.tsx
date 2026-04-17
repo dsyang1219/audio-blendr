@@ -196,7 +196,7 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
                       </DropdownMenuItem>
                     </>
                   )}
-                  {table === "playlist_tracks" && isCustomPlaylist && playlistId && (
+                  {table === "playlist_tracks" && playlistId && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => removeFromPlaylist(t.id)} className="text-destructive">
