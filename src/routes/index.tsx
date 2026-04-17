@@ -2,39 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Music, Youtube, Library } from "lucide-react";
 
-function OwlIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true">
-      {/* Ear tufts */}
-      <path d="M7 7 L4.5 3 L8.5 5.5 Z" fill="currentColor" />
-      <path d="M25 7 L27.5 3 L23.5 5.5 Z" fill="currentColor" />
-      {/* Body/head silhouette - rounded owl shape */}
-      <path
-        d="M16 4c-5.5 0-9 3.5-9 8v6c0 4.5 4 8 9 8s9-3.5 9-8v-6c0-4.5-3.5-8-9-8z"
-        fill="currentColor"
-        fillOpacity="0.2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      {/* Facial disc / brow line between eyes */}
-      <path d="M16 9 v6" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
-      {/* Big owl eyes - white rings */}
-      <circle cx="11.5" cy="13" r="3.2" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.3" />
-      <circle cx="20.5" cy="13" r="3.2" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.3" />
-      {/* Pupils */}
-      <circle cx="11.5" cy="13" r="1.4" fill="currentColor" />
-      <circle cx="20.5" cy="13" r="1.4" fill="currentColor" />
-      {/* Beak - triangular */}
-      <path d="M16 16 L14.5 18.5 L17.5 18.5 Z" fill="currentColor" />
-      {/* Wing hints */}
-      <path d="M8 18 Q9 22 11 23" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.7" />
-      <path d="M24 18 Q23 22 21 23" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.7" />
-      {/* Feet */}
-      <path d="M13 25.5 v1.5 M14 25.5 v1.5 M15 25.5 v1.5" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" />
-      <path d="M17 25.5 v1.5 M18 25.5 v1.5 M19 25.5 v1.5" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" />
-    </svg>
-  );
-}
+import owlIcon from "@/assets/owl-icon.png";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 
@@ -68,7 +36,7 @@ function Landing() {
       <main className="container mx-auto px-6 py-20">
         <section className="mx-auto max-w-3xl text-center animate-fade-in">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium">
-            <OwlIcon className="h-5 w-5 text-primary" />
+            <img src={owlIcon} alt="Owl mascot" width={24} height={24} loading="lazy" className="h-6 w-6 object-contain" />
             Built for Maddy
           </div>
           <h2 className="text-5xl font-bold tracking-tight md:text-7xl">
