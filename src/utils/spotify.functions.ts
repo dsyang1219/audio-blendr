@@ -320,9 +320,24 @@ export const syncPlaylists = createServerFn({ method: "POST" })
 
     const playlists: { id: string; name: string; description: string | null; image: string | null }[] = [];
     let plUrl: string | null = `${SPOTIFY_API}/me/playlists?limit=50`;
-    while (plUrl) {
+    let pageCount = 0;
+    while (plUrl && pageCount < 20) {
       const res: Response = await fetch(plUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
-      if (!res.ok) throw new Error("Failed to fetch playlists");
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("Spotify /me/playlists failed", res.status, errText);
+        if (pageCount === 0) {
+          if (res.status === 401 || res.status === 403) {
+            throw new Error("Spotify session expired — please reconnect on the Connect page");
+          }
+          if (res.status === 429) {
+            throw new Error("Spotify rate limit hit — please try again in a minute");
+          }
+          throw new Error(`Spotify returned ${res.status} when fetching your playlists`);
+        }
+        // partial success — stop paginating but keep what we have
+        break;
+      }
       const json = (await res.json()) as {
         items: { id: string; name: string; description: string | null; images: { url: string }[] }[];
         next: string | null;
@@ -336,6 +351,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
         });
       }
       plUrl = json.next;
+      pageCount++;
     }
 
     const syncedPlaylists: {
