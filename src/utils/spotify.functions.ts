@@ -157,6 +157,24 @@ async function refreshSpotifyToken(
   return tok.access_token;
 }
 
+async function spotifyFetch(url: string, accessToken: string, maxRetries = 4): Promise<Response> {
+  let attempt = 0;
+  let delay = 1000;
+  while (true) {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (res.status !== 429) return res;
+    if (attempt >= maxRetries) return res;
+    const retryAfter = Number(res.headers.get("retry-after"));
+    const wait = Number.isFinite(retryAfter) && retryAfter > 0
+      ? Math.min(retryAfter * 1000, 10_000)
+      : delay;
+    console.warn(`Spotify 429, waiting ${wait}ms (attempt ${attempt + 1}/${maxRetries})`);
+    await new Promise((r) => setTimeout(r, wait));
+    delay *= 2;
+    attempt++;
+  }
+}
+
 interface SpotifyTrackObj {
   id: string;
   name: string;
