@@ -19,23 +19,47 @@ export function LogoMark({ className }: { className?: string }) {
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id={gradA} x1="0" y1="20" x2="40" y2="20" gradientUnits="userSpaceOnUse">
+        <linearGradient id={gradA} x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="oklch(0.8 0.16 245)" />
-          <stop offset="100%" stopColor="oklch(0.72 0.18 250)" />
-        </linearGradient>
-        <linearGradient id={gradB} x1="0" y1="20" x2="40" y2="20" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="oklch(0.72 0.18 250)" />
           <stop offset="100%" stopColor="oklch(0.6 0.22 305)" />
         </linearGradient>
+        <linearGradient id={gradB} x1="0" y1="0" x2="0" y2="40" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="oklch(0.95 0.02 250)" />
+          <stop offset="100%" stopColor="oklch(0.85 0.08 250)" />
+        </linearGradient>
       </defs>
-      {/* Left wave bars — cool blue side of the blend */}
-      <rect x="6"  y="16" width="3" height="8"  rx="1.5" fill={`url(#${gradA})`} />
-      <rect x="11" y="11" width="3" height="18" rx="1.5" fill={`url(#${gradA})`} />
-      <rect x="16" y="6"  width="3" height="28" rx="1.5" fill={`url(#${gradA})`} />
-      {/* Right wave bars — blue→red blend */}
-      <rect x="21" y="6"  width="3" height="28" rx="1.5" fill={`url(#${gradB})`} />
-      <rect x="26" y="11" width="3" height="18" rx="1.5" fill={`url(#${gradB})`} />
-      <rect x="31" y="16" width="3" height="8"  rx="1.5" fill={`url(#${gradB})`} />
+      {/* Ear tufts */}
+      <path d="M8 10 L11 4 L14 11 Z" fill={`url(#${gradA})`} />
+      <path d="M32 10 L29 4 L26 11 Z" fill={`url(#${gradA})`} />
+      {/* Body / head — single rounded owl silhouette */}
+      <path
+        d="M20 6 C28 6 33 12 33 20 C33 29 27 35 20 35 C13 35 7 29 7 20 C7 12 12 6 20 6 Z"
+        fill={`url(#${gradA})`}
+      />
+      {/* Eye discs */}
+      <circle cx="14.5" cy="18" r="4.5" fill={`url(#${gradB})`} />
+      <circle cx="25.5" cy="18" r="4.5" fill={`url(#${gradB})`} />
+      {/* Pupils */}
+      <circle cx="14.5" cy="18" r="2" fill="oklch(0.18 0.04 260)" />
+      <circle cx="25.5" cy="18" r="2" fill="oklch(0.18 0.04 260)" />
+      {/* Eye shine */}
+      <circle cx="15.3" cy="17.2" r="0.7" fill="oklch(1 0 0)" />
+      <circle cx="26.3" cy="17.2" r="0.7" fill="oklch(1 0 0)" />
+      {/* Beak */}
+      <path d="M20 21 L18 24 L22 24 Z" fill="oklch(0.78 0.15 60)" />
+      {/* Wing hint */}
+      <path
+        d="M11 24 Q13 30 18 31"
+        stroke="oklch(0.4 0.1 270 / 0.5)"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M29 24 Q27 30 22 31"
+        stroke="oklch(0.4 0.1 270 / 0.5)"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
