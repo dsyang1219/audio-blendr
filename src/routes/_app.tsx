@@ -4,8 +4,9 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Music, Heart, Library, LogOut, Plug, Sparkles } from "lucide-react";
+import { Music, Heart, Library, LogOut, Plug } from "lucide-react";
 import { Player } from "@/components/Player";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -38,11 +39,8 @@ function AppLayout() {
     <div className="flex h-screen flex-col bg-background text-foreground">
       <div className="flex flex-1 overflow-hidden">
         <aside className="hidden w-64 flex-col border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl p-4 md:flex">
-          <Link to="/" className="group mb-6 flex items-center gap-2.5 px-2">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-glow transition-transform group-hover:scale-105">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-bold tracking-tight text-gradient">Audio Blendr</span>
+          <Link to="/" className="mb-6 block px-1">
+            <Logo size="md" />
           </Link>
 
           <nav className="space-y-1.5">
