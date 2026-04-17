@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Music, Plus } from "lucide-react";
@@ -23,6 +23,7 @@ interface PL {
 }
 
 function PlaylistsIndex() {
+  const location = useLocation();
   const { user } = useAuth();
   const [playlists, setPlaylists] = useState<PL[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,6 +67,10 @@ function PlaylistsIndex() {
     setOpen(false);
     load();
   };
+
+  if (location.pathname !== "/playlists") {
+    return <Outlet />;
+  }
 
   return (
     <div className="p-8">
