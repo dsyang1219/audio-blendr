@@ -16,6 +16,8 @@ export function Player() {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(70);
+  const [seeking, setSeeking] = useState(false);
+  const seekValueRef = useRef<number | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const resolveYT = useServerFn(resolveYouTube);
 
