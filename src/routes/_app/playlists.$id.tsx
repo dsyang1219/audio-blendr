@@ -232,7 +232,18 @@ function PlaylistDetail() {
         <Button onClick={handlePlayAll} disabled={tracks.length === 0} size="lg" className="gap-2 shadow-glow hover:scale-105 transition-all">
           <Play className="h-5 w-5 fill-current" /> Play
         </Button>
-        <Button onClick={handleShuffle} disabled={tracks.length === 0} size="lg" variant="secondary" className="gap-2">
+        <Button
+          onClick={handleShuffle}
+          disabled={tracks.length === 0}
+          size="lg"
+          variant="ghost"
+          aria-pressed={shuffle}
+          className={cn(
+            "gap-2 transition-colors",
+            shuffle ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"
+          )}
+          title={shuffle ? "Shuffle on" : "Shuffle off"}
+        >
           <Shuffle className="h-5 w-5" /> Shuffle
         </Button>
         <AddSongDialog playlistId={id} onAdded={load} />
