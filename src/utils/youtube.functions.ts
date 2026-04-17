@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { requireServerFnAuth } from "@/utils/server-fn-auth";
+
+type DB = SupabaseClient<Database>;
 
 interface YTSearchItem {
   id: { videoId?: string };
@@ -51,13 +54,14 @@ async function searchYouTubeOnce(query: string): Promise<string | null> {
 }
 
 async function findTrackRow(
+  supabase: DB,
   table: TrackTable,
   userId: string,
   trackId: string,
   title?: string,
   artist?: string,
 ): Promise<TrackLookupRow | null> {
-  const byId = await supabaseAdmin
+  const byId = await supabase
     .from(table)
     .select("id, title, artist, youtube_video_id, user_id")
     .eq("id", trackId)
@@ -69,7 +73,7 @@ async function findTrackRow(
   const normalizedArtist = artist?.trim();
   if (!normalizedTitle || !normalizedArtist) return null;
 
-  const byMetadata = await supabaseAdmin
+  const byMetadata = await supabase
     .from(table)
     .select("id, title, artist, youtube_video_id, user_id")
     .eq("user_id", userId)
@@ -86,8 +90,9 @@ export const resolveYouTube = createServerFn({ method: "POST" })
   .inputValidator((d: { table: TrackTable; trackId: string; title?: string; artist?: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
+    const supabase = context.supabase as DB;
 
-    const row = await findTrackRow(data.table, userId, data.trackId, data.title, data.artist);
+    const row = await findTrackRow(supabase, data.table, userId, data.trackId, data.title, data.artist);
     if (!row) {
       console.error("[youtube] Track lookup failed", {
         table: data.table,
@@ -115,7 +120,7 @@ export const resolveYouTube = createServerFn({ method: "POST" })
     }
 
     if (videoId) {
-      await supabaseAdmin.from(data.table).update({ youtube_video_id: videoId }).eq("id", row.id);
+      await supabase.from(data.table).update({ youtube_video_id: videoId }).eq("id", row.id);
       return { videoId };
     }
 
