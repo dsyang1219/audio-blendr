@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export function Player() {
-  const { current, isPlaying, setIsPlaying, playNext, playPrev, shuffle, toggleShuffle } = usePlayer();
+  const { current, isPlaying, setIsPlaying, playNext, playPrev, shuffle, toggleShuffle, queue, currentIndex, setTrackVideoId } = usePlayer();
   const [videoId, setVideoId] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -20,6 +20,7 @@ export function Player() {
   const seekValueRef = useRef<number | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const resolveYT = useServerFn(resolveYouTube);
+  const prefetchedRef = useRef<Set<string>>(new Set());
 
   // Resolve YouTube video for current track when it changes
   useEffect(() => {
@@ -46,6 +47,7 @@ export function Player() {
         });
         if (!cancelled && result.videoId) {
           setVideoId(result.videoId);
+          setTrackVideoId(current.id, result.videoId);
           return;
         }
 
@@ -54,6 +56,7 @@ export function Player() {
         });
         if (!cancelled && fallback.videoId) {
           setVideoId(fallback.videoId);
+          setTrackVideoId(current.id, fallback.videoId);
           return;
         }
 
@@ -65,6 +68,7 @@ export function Player() {
           });
           if (!cancelled && fallback.videoId) {
             setVideoId(fallback.videoId);
+            setTrackVideoId(current.id, fallback.videoId);
             return;
           }
           if (!cancelled) toast.error(`Couldn't find "${current.title}" on YouTube`);
@@ -80,7 +84,24 @@ export function Player() {
     return () => {
       cancelled = true;
     };
-  }, [current, resolveYT]);
+  }, [current, resolveYT, setTrackVideoId]);
+
+  // Prefetch the next track's YouTube ID so it plays instantly when skipped to
+  useEffect(() => {
+    const next = queue[currentIndex + 1];
+    if (!next || next.youtube_video_id) return;
+    if (prefetchedRef.current.has(next.id)) return;
+    prefetchedRef.current.add(next.id);
+
+    const table = next.sourceTable ?? (next.spotify_track_id ? "liked_tracks" : "playlist_tracks");
+    void resolveYT({ data: { table, trackId: next.id, title: next.title, artist: next.artist } })
+      .then((res) => {
+        if (res.videoId) setTrackVideoId(next.id, res.videoId);
+      })
+      .catch(() => {
+        prefetchedRef.current.delete(next.id);
+      });
+  }, [queue, currentIndex, resolveYT, setTrackVideoId]);
 
   // Progress polling
   useEffect(() => {

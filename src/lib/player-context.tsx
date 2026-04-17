@@ -24,6 +24,7 @@ interface PlayerContextValue {
   playQueue: (tracks: Track[], startIndex?: number, opts?: { shuffle?: boolean }) => void;
   playNext: () => void;
   playPrev: () => void;
+  setTrackVideoId: (trackId: string, videoId: string) => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
@@ -85,6 +86,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const setTrackVideoId = (trackId: string, videoId: string) => {
+    setQueue((q) => q.map((t) => (t.id === trackId && !t.youtube_video_id ? { ...t, youtube_video_id: videoId } : t)));
+  };
+
   return (
     <PlayerContext.Provider
       value={{
@@ -99,6 +104,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         playQueue,
         playNext,
         playPrev,
+        setTrackVideoId,
       }}
     >
       {children}
