@@ -166,7 +166,7 @@ export function Player() {
               onClick={() => setIsPlaying(!isPlaying)}
               disabled={!current}
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground shadow-glow transition-all hover:scale-110 active:scale-95 disabled:opacity-40 disabled:hover:scale-100",
+                "flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-all hover:scale-110 active:scale-95 disabled:opacity-40 disabled:hover:scale-100",
                 isPlaying && "animate-pulse-glow"
               )}
               aria-label={isPlaying ? "Pause" : "Play"}

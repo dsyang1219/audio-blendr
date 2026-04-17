@@ -83,7 +83,7 @@ function AppLayout() {
 
           <div className="mt-auto pt-4">
             <div className="mb-2 flex items-center gap-2 rounded-lg bg-sidebar-accent/50 px-3 py-2">
-              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-primary text-xs font-bold text-primary-foreground">
+              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">
                 {(user.email?.[0] ?? "U").toUpperCase()}
               </div>
               <span className="truncate text-xs text-muted-foreground">{user.email}</span>

@@ -139,7 +139,7 @@ function ConnectPage() {
   return (
     <div className="space-y-6 p-8 animate-fade-in">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight">Sync <span className="text-gradient">sources</span></h1>
+        <h1 className="text-4xl font-bold tracking-tight">Sync sources</h1>
         <p className="mt-1 text-muted-foreground">Connect Spotify and add YouTube tracks to build your unified library.</p>
       </div>
 
