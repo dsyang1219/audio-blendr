@@ -9,6 +9,7 @@ import {
   disconnectSpotify,
 } from "@/utils/spotify.functions";
 import { importYouTubePlaylist, addYouTubeVideo } from "@/utils/youtube-import.functions";
+import { batchResolveYouTube } from "@/utils/youtube.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
