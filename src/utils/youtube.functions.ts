@@ -56,7 +56,7 @@ export const resolveYouTube = createServerFn({ method: "POST" })
 
 export const batchResolveYouTube = createServerFn({ method: "POST" })
   .middleware([requireServerFnAuth])
-  .inputValidator((d?: { cap?: number }) => d ?? {})
+  .inputValidator((d: { cap?: number }) => d ?? {})
   .handler(async ({ data, context }) => {
     const userId = context.userId;
     const supabase = context.supabase as DB;
