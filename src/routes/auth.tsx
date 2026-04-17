@@ -82,7 +82,7 @@ function SignInForm() {
         <Label htmlFor="si-pw">Password</Label>
         <Input id="si-pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
-      <Button type="submit" className="w-full bg-gradient-primary shadow-glow hover:shadow-pink hover:scale-[1.02] transition-all" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
+      <Button type="submit" className="w-full" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
     </form>
   );
 }
@@ -123,7 +123,7 @@ function SignUpForm() {
         <Label htmlFor="su-pw">Password</Label>
         <Input id="su-pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
-      <Button type="submit" className="w-full bg-gradient-primary shadow-glow hover:shadow-pink hover:scale-[1.02] transition-all" disabled={busy}>{busy ? "Creating…" : "Create account"}</Button>
+      <Button type="submit" className="w-full" disabled={busy}>{busy ? "Creating…" : "Create account"}</Button>
     </form>
   );
 }

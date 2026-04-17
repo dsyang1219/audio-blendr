@@ -59,12 +59,12 @@ function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8 animate-fade-in">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary shadow-glow">
-          <SettingsIcon className="h-5 w-5 text-primary-foreground" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary">
+          <SettingsIcon className="h-5 w-5 text-secondary-foreground" />
         </div>
         <div>
           <h1 className="font-display text-4xl font-bold tracking-tight">
-            <span className="text-gradient">Settings</span>
+            Settings
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">Manage your account and connected services.</p>
         </div>
@@ -74,8 +74,8 @@ function SettingsPage() {
       <Card className="glass border-border/60">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-glow">
-              <User className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
+              <User className="h-5 w-5 text-secondary-foreground" />
             </div>
             Account
           </CardTitle>
@@ -83,7 +83,7 @@ function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3 rounded-xl bg-sidebar-accent/40 p-3">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-primary text-base font-bold text-primary-foreground shadow-glow">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-base font-bold text-secondary-foreground">
               {initial}
             </div>
             <div className="min-w-0">

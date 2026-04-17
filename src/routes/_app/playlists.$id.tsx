@@ -194,11 +194,8 @@ function PlaylistDetail() {
   const isCustom = playlist.source === "custom";
   const isSpotifyLinked = playlist.source === "spotify" && !!playlist.spotify_playlist_id;
 
-  // Deterministic gradient per playlist id
-  const gradients = ["bg-gradient-primary", "bg-gradient-violet", "bg-gradient-cyan", "bg-gradient-sunset"];
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
-  const heroGradient = gradients[Math.abs(h) % gradients.length];
+  // Neutral hero background — no gradient
+  const heroGradient = "bg-secondary";
 
   return (
     <div className="animate-fade-in">
@@ -229,7 +226,7 @@ function PlaylistDetail() {
 
       <div className="px-8 pt-2">
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <Button onClick={handlePlayAll} disabled={tracks.length === 0} size="lg" className="gap-2 bg-gradient-primary shadow-glow hover:shadow-pink hover:scale-105 transition-all">
+        <Button onClick={handlePlayAll} disabled={tracks.length === 0} size="lg" className="gap-2 shadow-glow hover:scale-105 transition-all">
           <Play className="h-5 w-5 fill-current" /> Play
         </Button>
         <Button onClick={handleShuffle} disabled={tracks.length === 0} size="lg" variant="secondary" className="gap-2">
