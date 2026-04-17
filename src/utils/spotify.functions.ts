@@ -438,89 +438,40 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       pageCount++;
     }
 
-    // Filter to only NEW playlists (incremental)
-    const allNewPlaylists = playlists.filter((p) => !alreadySynced.has(p.id));
-    const skippedCount = playlists.length - allNewPlaylists.length;
-
-    // Process playlists serially with a small delay between requests.
-    // Concurrent fetches were the main cause of 429s — Spotify rate-limits
-    // per-app aggressively. Serial + gentle pacing is far more reliable.
-    const BATCH_SIZE = 8;
-    const REQUEST_GAP_MS = 250;
-    const newPlaylists = allNewPlaylists.slice(0, BATCH_SIZE);
-    const remaining = allNewPlaylists.length - newPlaylists.length;
+    const newPlaylists = playlists.filter((p) => !alreadySynced.has(p.id));
+    const skippedCount = playlists.length - newPlaylists.length;
 
     let inserted = 0;
-    let totalTracks = 0;
-    let rateLimitedAny = false;
+    for (const p of newPlaylists) {
+      const { error } = await supabase.from("playlists").insert({
+        user_id: userId,
+        name: p.name,
+        description: p.description,
+        cover_url: p.image,
+        source: "spotify",
+        spotify_playlist_id: p.id,
+      });
 
-    for (let i = 0; i < newPlaylists.length; i++) {
-      const p = newPlaylists[i];
-      const { rows, status } = await fetchAllPlaylistTracks(p.id, accessToken, userId);
-
-      if (!rows) {
-        if (status === 429) {
-          rateLimitedAny = true;
-          break;
-        }
-        // 403 or other: skip this playlist but continue with others
-        continue;
-      }
-      if (rows.length === 0) continue;
-
-      const { data: pl, error: plErr } = await supabase
-        .from("playlists")
-        .insert({
-          user_id: userId,
-          name: p.name,
-          description: p.description,
-          cover_url: p.image,
-          source: "spotify",
-          spotify_playlist_id: p.id,
-        })
-        .select("id")
-        .single();
-      if (plErr || !pl) {
-        console.error("Insert playlist failed", plErr);
+      if (error) {
+        console.error("Insert playlist shell failed", p.name, error);
         continue;
       }
 
-      const tracksWithPlaylist = rows.map((row) => ({ ...row, playlist_id: pl.id }));
-      const { error: insErr } = await supabase.from("playlist_tracks").insert(tracksWithPlaylist);
-      if (insErr) {
-        console.error("Insert playlist tracks failed", p.name, insErr);
-        await supabase.from("playlists").delete().eq("id", pl.id);
-        continue;
-      }
       inserted++;
-      totalTracks += rows.length;
-
-      // Gentle pacing between playlists to avoid bursting Spotify
-      if (i < newPlaylists.length - 1) await wait(REQUEST_GAP_MS);
     }
 
-    const stillRemaining = remaining + (rateLimitedAny ? newPlaylists.length - inserted : 0);
-    const isPartial = rateLimitedAny || partialReason !== null || stillRemaining > 0;
-
-    let message: string | null = null;
-    if (rateLimitedAny && inserted === 0) {
-      message = `Spotify is rate-limiting right now. ${stillRemaining} playlists left — wait a few seconds and click Sync again.`;
-    } else if (stillRemaining > 0) {
-      message = `Imported ${inserted} playlists (${totalTracks} tracks). ${stillRemaining} more to go — click Sync again to continue.`;
-    } else if (partialReason) {
-      message = partialReason;
-    } else if (inserted === 0 && skippedCount > 0) {
-      message = `All ${skippedCount} playlists are already synced — nothing new to import.`;
-    } else if (inserted > 0) {
-      message = `Synced ${inserted} new playlists (${totalTracks} tracks). All caught up!`;
-    }
+    const message = partialReason
+      ? partialReason
+      : inserted === 0 && skippedCount > 0
+        ? `All ${skippedCount} playlists are already synced — nothing new to import.`
+        : `Synced ${inserted} playlist${inserted === 1 ? "" : "s"} with metadata only.`;
 
     return {
       playlists: inserted,
-      tracks: totalTracks,
+      tracks: 0,
       skipped: skippedCount,
-      remaining: stillRemaining,
-      partial: isPartial,
+      remaining: 0,
+      partial: partialReason !== null,
       message,
     };
   });
