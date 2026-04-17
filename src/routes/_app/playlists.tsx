@@ -125,15 +125,15 @@ function PlaylistsIndex() {
   }
 
   return (
-    <div className="p-8 animate-fade-in">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="p-4 md:p-8 animate-fade-in">
+      <div className="mb-6 md:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">Your Playlists</h1>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Your Playlists</h1>
           <p className="mt-1 text-sm text-muted-foreground">Curate, remix, and rediscover your music.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button variant="secondary" className="hover:scale-105 transition-all">
+            <Button variant="secondary" className="self-start sm:self-auto hover:scale-105 transition-all">
               <Plus className="mr-2 h-4 w-4" /> New Playlist
             </Button>
           </DialogTrigger>
