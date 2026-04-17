@@ -81,10 +81,11 @@
   --sidebar-ring: oklch(0.72 0.19 150);
 
   /* All gradients = straight Spotify green → YouTube red */
-  --gradient-primary: linear-gradient(135deg, oklch(0.72 0.19 150), oklch(0.62 0.24 27));
-  --gradient-violet: linear-gradient(135deg, oklch(0.72 0.19 150), oklch(0.62 0.24 27));
-  --gradient-cyan: linear-gradient(135deg, oklch(0.72 0.19 150), oklch(0.62 0.24 27));
-  --gradient-sunset: linear-gradient(135deg, oklch(0.72 0.19 150), oklch(0.62 0.24 27));
+  /* Dark neutral midpoint avoids the orange that appears when interpolating green→red */
+  --gradient-primary: linear-gradient(135deg, oklch(0.72 0.19 150) 0%, oklch(0.22 0.005 0) 50%, oklch(0.62 0.24 27) 100%);
+  --gradient-violet: linear-gradient(135deg, oklch(0.72 0.19 150) 0%, oklch(0.22 0.005 0) 50%, oklch(0.62 0.24 27) 100%);
+  --gradient-cyan: linear-gradient(135deg, oklch(0.72 0.19 150) 0%, oklch(0.22 0.005 0) 50%, oklch(0.62 0.24 27) 100%);
+  --gradient-sunset: linear-gradient(135deg, oklch(0.72 0.19 150) 0%, oklch(0.22 0.005 0) 50%, oklch(0.62 0.24 27) 100%);
   --gradient-mesh: radial-gradient(at 20% 0%, oklch(0.72 0.19 150 / 0.3) 0px, transparent 50%),
                    radial-gradient(at 80% 80%, oklch(0.62 0.24 27 / 0.25) 0px, transparent 50%);
   --shadow-glow: 0 10px 40px -10px oklch(0.72 0.19 150 / 0.5);
