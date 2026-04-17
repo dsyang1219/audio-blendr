@@ -196,6 +196,18 @@ function ConnectPage() {
                 {busy === "playlists" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sync playlists
               </Button>
+              <Button
+                onClick={async () => {
+                  setBusy("resolve");
+                  await runBatchResolve(false);
+                  setBusy(null);
+                }}
+                disabled={!!busy}
+                variant="secondary"
+              >
+                {busy === "resolve" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Resolve YouTube IDs
+              </Button>
               <Button onClick={disconnect} disabled={!!busy} variant="ghost">
                 <Unplug className="mr-2 h-4 w-4" /> Disconnect
               </Button>
