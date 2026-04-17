@@ -340,7 +340,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
     let plUrl: string | null = `${SPOTIFY_API}/me/playlists?limit=50`;
     let pageCount = 0;
     while (plUrl && pageCount < 20) {
-      const res: Response = await fetch(plUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+      const res: Response = await spotifyFetch(plUrl, accessToken);
       if (!res.ok) {
         const errText = await res.text();
         console.error("Spotify /me/playlists failed", res.status, errText);
