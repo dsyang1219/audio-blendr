@@ -188,8 +188,8 @@ function ConnectPage() {
       <Card className="glass border-border/60 hover-lift">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-pink-500 shadow-pink">
-              <Youtube className="h-5 w-5 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-glow">
+              <Youtube className="h-5 w-5 text-primary-foreground" />
             </div>
             Add a YouTube video
           </CardTitle>
@@ -214,8 +214,8 @@ function ConnectPage() {
       <Card className="glass border-border/60 hover-lift">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-red-500 to-pink-500 shadow-pink">
-              <Youtube className="h-5 w-5 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-glow">
+              <Youtube className="h-5 w-5 text-primary-foreground" />
             </div>
             Import a YouTube playlist
           </CardTitle>
