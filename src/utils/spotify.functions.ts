@@ -157,6 +157,24 @@ async function refreshSpotifyToken(
   return tok.access_token;
 }
 
+async function spotifyFetch(url: string, accessToken: string, maxRetries = 4): Promise<Response> {
+  let attempt = 0;
+  let delay = 1000;
+  while (true) {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (res.status !== 429) return res;
+    if (attempt >= maxRetries) return res;
+    const retryAfter = Number(res.headers.get("retry-after"));
+    const wait = Number.isFinite(retryAfter) && retryAfter > 0
+      ? Math.min(retryAfter * 1000, 10_000)
+      : delay;
+    console.warn(`Spotify 429, waiting ${wait}ms (attempt ${attempt + 1}/${maxRetries})`);
+    await new Promise((r) => setTimeout(r, wait));
+    delay *= 2;
+    attempt++;
+  }
+}
+
 interface SpotifyTrackObj {
   id: string;
   name: string;
@@ -322,7 +340,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
     let plUrl: string | null = `${SPOTIFY_API}/me/playlists?limit=50`;
     let pageCount = 0;
     while (plUrl && pageCount < 20) {
-      const res: Response = await fetch(plUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+      const res: Response = await spotifyFetch(plUrl, accessToken);
       if (!res.ok) {
         const errText = await res.text();
         console.error("Spotify /me/playlists failed", res.status, errText);
@@ -362,9 +380,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
     }[] = [];
 
     for (const p of playlists) {
-      const tRes = await fetch(`${SPOTIFY_API}/playlists/${p.id}/tracks?limit=100`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const tRes = await spotifyFetch(`${SPOTIFY_API}/playlists/${p.id}/tracks?limit=100`, accessToken);
       if (!tRes.ok) {
         console.error("Fetch playlist tracks failed", p.id, tRes.status, await tRes.text());
         continue;
