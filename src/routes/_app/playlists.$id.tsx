@@ -82,12 +82,11 @@ function PlaylistDetail() {
 
   const handlePlayAll = () => {
     if (queueTracks.length === 0) return;
-    playQueue(queueTracks, 0, { shuffle: false });
+    playQueue(queueTracks, 0, { shuffle });
   };
 
   const handleShuffle = () => {
-    if (queueTracks.length === 0) return;
-    playQueue(queueTracks, 0, { shuffle: true });
+    toggleShuffle();
   };
 
   const handleSyncFromSpotify = async () => {
