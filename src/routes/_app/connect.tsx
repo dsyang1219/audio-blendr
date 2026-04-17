@@ -38,11 +38,28 @@ function ConnectPage() {
     getStatusFn().then(setStatus).catch(() => setStatus({ connected: false, displayName: null }));
   }, [getStatusFn]);
 
+  const openSpotifyAuth = (url: string) => {
+    if (window.top && window.top !== window) {
+      try {
+        window.top.location.href = url;
+        return;
+      } catch {
+        // Fall back to a new tab when the preview frame cannot navigate the top window.
+      }
+    }
+
+    const popup = window.open(url, "_blank", "noopener,noreferrer");
+    if (!popup) {
+      window.location.href = url;
+    }
+  };
+
   const connect = async () => {
     setBusy("connect");
     try {
       const { url } = await getAuthUrlFn({ data: { origin: window.location.origin } });
-      window.location.href = url;
+      openSpotifyAuth(url);
+      setBusy(null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to start Spotify auth");
       setBusy(null);
