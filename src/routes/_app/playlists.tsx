@@ -133,6 +133,41 @@ function PlaylistsIndex() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
+                <Label>Cover image (optional)</Label>
+                <div className="flex items-center gap-3">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded bg-muted">
+                    {coverPreview ? (
+                      <>
+                        <img src={coverPreview} alt="Cover preview" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => onPickCover(null)}
+                          className="absolute right-0.5 top-0.5 rounded-full bg-background/80 p-0.5 text-foreground hover:bg-background"
+                          aria-label="Remove cover"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Music className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    {coverPreview ? "Change" : "Upload"}
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => onPickCover(e.target.files?.[0] ?? null)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="pl-name">Name</Label>
                 <Input id="pl-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="My awesome mix" />
               </div>
