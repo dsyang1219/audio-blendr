@@ -25,28 +25,38 @@ function LibraryPage() {
   }, []);
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-end gap-6">
-        <div className="flex h-48 w-48 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/40 shadow-xl">
-          <Heart className="h-20 w-20 fill-primary-foreground text-primary-foreground" />
-        </div>
-        <div>
-          <p className="text-xs font-bold uppercase">Playlist</p>
-          <h1 className="mt-2 text-5xl font-bold">Liked Songs</h1>
-          <p className="mt-3 text-sm text-muted-foreground">{tracks.length} {tracks.length === 1 ? "song" : "songs"}</p>
+    <div className="animate-fade-in">
+      <div className="relative bg-gradient-sunset px-8 pb-10 pt-16">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
+        <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-end">
+          <div className="flex h-52 w-52 items-center justify-center rounded-2xl bg-background/20 backdrop-blur-sm shadow-elegant ring-1 ring-white/10">
+            <Heart className="h-24 w-24 fill-primary-foreground text-primary-foreground drop-shadow-lg" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/90">Playlist</p>
+            <h1 className="mt-2 text-5xl font-bold tracking-tight md:text-6xl">Liked Songs</h1>
+            <p className="mt-4 text-sm font-medium text-primary-foreground/90">
+              {tracks.length} {tracks.length === 1 ? "song" : "songs"}
+            </p>
+          </div>
         </div>
       </div>
 
-      {loading ? (
-        <p className="text-muted-foreground">Loading…</p>
-      ) : tracks.length === 0 ? (
-        <div className="rounded-lg border border-border bg-card p-8 text-center">
-          <p className="text-muted-foreground">No liked songs yet.</p>
-          <p className="mt-1 text-sm text-muted-foreground">Connect Spotify and sync your library to get started.</p>
-        </div>
-      ) : (
-        <TrackList tracks={tracks} table="liked_tracks" />
-      )}
+      <div className="px-8 pb-8 pt-2">
+        {loading ? (
+          <p className="text-muted-foreground">Loading…</p>
+        ) : tracks.length === 0 ? (
+          <div className="glass rounded-2xl p-12 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-sunset shadow-pink">
+              <Heart className="h-8 w-8 fill-primary-foreground text-primary-foreground" />
+            </div>
+            <p className="text-lg font-semibold">No liked songs yet</p>
+            <p className="mt-1 text-sm text-muted-foreground">Connect Spotify and sync your library to get started.</p>
+          </div>
+        ) : (
+          <TrackList tracks={tracks} table="liked_tracks" />
+        )}
+      </div>
     </div>
   );
 }
