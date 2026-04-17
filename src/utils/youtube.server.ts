@@ -18,6 +18,13 @@ export type TrackLookupRow = {
   user_id: string;
 };
 
+export class YouTubeQuotaError extends Error {
+  constructor(message = "YouTube quota exceeded") {
+    super(message);
+    this.name = "YouTubeQuotaError";
+  }
+}
+
 export async function searchYouTubeOnce(query: string): Promise<string | null> {
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) {
@@ -37,6 +44,9 @@ export async function searchYouTubeOnce(query: string): Promise<string | null> {
   if (!res.ok) {
     const body = await res.text();
     console.error(`[youtube] search HTTP ${res.status} for query "${query}":`, body);
+    if (res.status === 403 && /quota/i.test(body)) {
+      throw new YouTubeQuotaError();
+    }
     return null;
   }
 
@@ -49,6 +59,11 @@ export async function searchYouTubeOnce(query: string): Promise<string | null> {
 
   console.log(`[youtube] Resolved "${query}" -> ${first.id.videoId} (${first.snippet.title})`);
   return first.id.videoId ?? null;
+}
+
+export function buildYouTubeQuery(artist: string, title: string): string {
+  const cleanTitle = title.replace(/\s*[-(].*?(remaster|remix|version|feat\.?|ft\.?).*?[)]?$/i, "").trim();
+  return `${artist} - ${cleanTitle}`;
 }
 
 export async function findTrackRow(
