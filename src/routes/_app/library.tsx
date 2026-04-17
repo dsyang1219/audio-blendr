@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_app/library")({
 function LibraryPage() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
-  const { playQueue } = usePlayer();
+  const { playQueue, shuffle, toggleShuffle } = usePlayer();
 
   const load = useCallback(() => {
     setLoading(true);
@@ -36,14 +36,14 @@ function LibraryPage() {
 
   const queueTracks = tracks.map((t) => ({ ...t, sourceTable: "liked_tracks" as const }));
 
-  const handlePlayAll = () => {
+  const handlePlay = () => {
     if (queueTracks.length === 0) return;
-    playQueue(queueTracks, 0, { shuffle: false });
+    playQueue(queueTracks, 0, { shuffle });
   };
 
-  const handleShuffle = () => {
-    if (queueTracks.length === 0) return;
-    playQueue(queueTracks, 0, { shuffle: true });
+  const handleToggleShuffle = () => {
+    // If nothing is playing yet, just toggle the preference; otherwise reshuffle in place
+    toggleShuffle();
   };
 
   return (
