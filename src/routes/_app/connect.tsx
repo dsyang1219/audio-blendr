@@ -91,13 +91,16 @@ function ConnectPage() {
       const r = (await syncPlaylistsFn()) as {
         playlists: number;
         tracks: number;
+        skipped?: number;
         partial?: boolean;
-        message?: string;
+        message?: string | null;
       };
-      if (r.partial) {
-        toast.warning(r.message ?? `Synced ${r.playlists} playlists, ${r.tracks} tracks with some limits from Spotify`);
+      if (r.message) {
+        if (r.partial) toast.warning(r.message);
+        else toast.success(r.message);
       } else {
-        toast.success(`Synced ${r.playlists} playlists, ${r.tracks} tracks`);
+        const skippedNote = r.skipped ? ` (skipped ${r.skipped} already-synced)` : "";
+        toast.success(`Synced ${r.playlists} new playlists, ${r.tracks} tracks${skippedNote}`);
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to sync");

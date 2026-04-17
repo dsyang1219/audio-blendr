@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { TrackList } from "@/components/TrackList";
-import { Music, Trash2, Play, Shuffle } from "lucide-react";
+import { Music, Trash2, Play, Shuffle, RefreshCw } from "lucide-react";
 import type { Track } from "@/lib/player-context";
 import { usePlayer } from "@/lib/player-context";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { AddSongDialog } from "@/components/AddSongDialog";
+import { syncSinglePlaylist } from "@/utils/spotify.functions";
 
 export const Route = createFileRoute("/_app/playlists/$id")({
   component: PlaylistDetail,
@@ -30,6 +32,7 @@ interface PlaylistMeta {
   cover_url: string | null;
   source: string;
   user_id: string;
+  spotify_playlist_id: string | null;
 }
 
 function PlaylistDetail() {
@@ -39,11 +42,13 @@ function PlaylistDetail() {
   const [playlist, setPlaylist] = useState<PlaylistMeta | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const syncOneFn = useServerFn(syncSinglePlaylist);
 
   const load = useCallback(() => {
     setLoading(true);
     Promise.all([
-      supabase.from("playlists").select("name, description, cover_url, source, user_id").eq("id", id).maybeSingle(),
+      supabase.from("playlists").select("name, description, cover_url, source, user_id, spotify_playlist_id").eq("id", id).maybeSingle(),
       supabase.from("playlist_tracks").select("*").eq("playlist_id", id).order("position"),
     ]).then(([pl, tr]) => {
       setPlaylist(pl.data as PlaylistMeta | null);
@@ -68,6 +73,19 @@ function PlaylistDetail() {
     playQueue(queueTracks, 0, { shuffle: true });
   };
 
+  const handleSyncFromSpotify = async () => {
+    setSyncing(true);
+    try {
+      const r = await syncOneFn({ data: { playlistId: id } });
+      toast.success(`Imported ${r.tracks} tracks from Spotify`);
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to sync");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const deletePlaylist = async () => {
     const { error: tracksError } = await supabase.from("playlist_tracks").delete().eq("playlist_id", id);
     if (tracksError) {
@@ -87,6 +105,7 @@ function PlaylistDetail() {
   if (!playlist) return <div className="p-8 text-muted-foreground">Playlist not found</div>;
 
   const isCustom = playlist.source === "custom";
+  const isSpotifyLinked = playlist.source === "spotify" && !!playlist.spotify_playlist_id;
 
   return (
     <div className="p-8">
@@ -102,7 +121,7 @@ function PlaylistDetail() {
         </div>
         <div className="flex-1">
           <p className="text-xs font-bold uppercase">
-            {isCustom ? "Custom Playlist" : playlist.source === "youtube" ? "YouTube Playlist" : "Playlist"}
+            {isCustom ? "Custom Playlist" : playlist.source === "youtube" ? "YouTube Playlist" : "Spotify Playlist"}
           </p>
           <h1 className="mt-2 text-5xl font-bold">{playlist.name}</h1>
           {playlist.description && <p className="mt-2 text-muted-foreground">{playlist.description}</p>}
@@ -120,6 +139,12 @@ function PlaylistDetail() {
           <Shuffle className="h-5 w-5" /> Shuffle
         </Button>
         <AddSongDialog playlistId={id} onAdded={load} />
+        {isSpotifyLinked && (
+          <Button onClick={handleSyncFromSpotify} disabled={syncing} size="lg" variant="outline" className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+            {tracks.length === 0 ? "Sync from Spotify" : "Re-sync from Spotify"}
+          </Button>
+        )}
         {isCustom && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -145,7 +170,9 @@ function PlaylistDetail() {
 
       {tracks.length === 0 ? (
         <p className="text-muted-foreground">
-          No tracks yet. Click "Add song" above to add from Spotify or YouTube.
+          {isSpotifyLinked
+            ? 'No tracks yet. Click "Sync from Spotify" above to import this playlist\'s tracks.'
+            : 'No tracks yet. Click "Add song" above to add from Spotify or YouTube.'}
         </p>
       ) : (
         <TrackList

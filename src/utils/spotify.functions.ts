@@ -331,12 +331,48 @@ export const addSpotifyTrackToPlaylist = createServerFn({ method: "POST" })
     return { title: data.title };
   });
 
+async function fetchAllPlaylistTracks(
+  spotifyPlaylistId: string,
+  accessToken: string,
+  userId: string,
+): Promise<{ rows: Array<ReturnType<typeof mapTrack> & { user_id: string; position: number; source: "spotify" }> | null; status: number }> {
+  const rows: Array<ReturnType<typeof mapTrack> & { user_id: string; position: number; source: "spotify" }> = [];
+  let url: string | null = `${SPOTIFY_API}/playlists/${spotifyPlaylistId}/tracks?limit=100`;
+  let position = 0;
+  let pageCount = 0;
+  while (url && pageCount < 10) {
+    const res: Response = await spotifyFetch(url, accessToken);
+    if (!res.ok) {
+      console.error("Fetch playlist tracks failed", spotifyPlaylistId, res.status, await res.text());
+      return { rows: null, status: res.status };
+    }
+    const json = (await res.json()) as { items: { track: SpotifyTrackObj | null }[]; next: string | null };
+    for (const it of json.items) {
+      if (!it.track) continue;
+      rows.push({ ...mapTrack(it.track), user_id: userId, position: position++, source: "spotify" as const });
+    }
+    url = json.next;
+    pageCount++;
+    if (url) await pause(250);
+  }
+  return { rows, status: 200 };
+}
+
 export const syncPlaylists = createServerFn({ method: "POST" })
   .middleware([requireServerFnAuth])
   .handler(async ({ context }) => {
     const userId = context.userId;
     const supabase = context.supabase;
     const accessToken = await refreshSpotifyToken(supabase, userId);
+
+    // Get already-synced Spotify playlist IDs so we can skip them
+    const { data: existing } = await supabase
+      .from("playlists")
+      .select("spotify_playlist_id")
+      .eq("user_id", userId)
+      .eq("source", "spotify")
+      .not("spotify_playlist_id", "is", null);
+    const alreadySynced = new Set((existing ?? []).map((p) => p.spotify_playlist_id).filter(Boolean));
 
     const playlists: { id: string; name: string; description: string | null; image: string | null }[] = [];
     let plUrl: string | null = `${SPOTIFY_API}/me/playlists?limit=50`;
@@ -352,13 +388,13 @@ export const syncPlaylists = createServerFn({ method: "POST" })
             throw new Error("Spotify session expired — please reconnect on the Connect page");
           }
           if (res.status === 429) {
-            return { playlists: 0, tracks: 0, partial: true, message: "Spotify is rate-limiting requests right now — please wait a minute and try again." };
+            return { playlists: 0, tracks: 0, skipped: 0, partial: true, message: "Spotify is rate-limiting requests right now — please wait a few minutes and try again." };
           }
           throw new Error(`Spotify returned ${res.status} when fetching your playlists`);
         }
         partialReason = res.status === 429
-          ? "Spotify rate-limited some playlist pages, so only part of your library was synced."
-          : `Spotify stopped returning playlist pages (${res.status}), so only part of your library was synced.`;
+          ? "Spotify rate-limited some playlist pages, so only part of your library was listed."
+          : `Spotify stopped returning playlist pages (${res.status}).`;
         break;
       }
       const json = (await res.json()) as {
@@ -375,66 +411,34 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       }
       plUrl = json.next;
       pageCount++;
-      if (plUrl) {
-        await pause(300);
-      }
+      if (plUrl) await pause(300);
     }
 
-    const syncedPlaylists: {
-      name: string;
-      description: string | null;
-      image: string | null;
-      rows: Array<ReturnType<typeof mapTrack> & { user_id: string; position: number; source: "spotify" }>;
-    }[] = [];
+    // Filter to only NEW playlists (incremental)
+    const newPlaylists = playlists.filter((p) => !alreadySynced.has(p.id));
+    const skippedCount = playlists.length - newPlaylists.length;
 
-    for (const p of playlists) {
-      const tRes = await spotifyFetch(`${SPOTIFY_API}/playlists/${p.id}/tracks?limit=100`, accessToken);
-      if (!tRes.ok) {
-        console.error("Fetch playlist tracks failed", p.id, tRes.status, await tRes.text());
-        if (tRes.status === 429 && !partialReason) {
-          partialReason = "Spotify rate-limited some playlist track imports, so only accessible playlists were synced.";
+    let inserted = 0;
+    let totalTracks = 0;
+    let rateLimitedAny = false;
+
+    for (const p of newPlaylists) {
+      const { rows, status } = await fetchAllPlaylistTracks(p.id, accessToken, userId);
+      if (!rows) {
+        if (status === 429) {
+          rateLimitedAny = true;
+          // stop early — back off and let user retry later
+          break;
         }
+        // 403 or other: skip this playlist but continue with others
         await pause(500);
         continue;
       }
-
-      const tJson = (await tRes.json()) as { items: { track: SpotifyTrackObj | null }[] };
-      const rows = tJson.items
-        .map((it, idx) => (it.track ? { ...mapTrack(it.track), user_id: userId, position: idx, source: "spotify" as const } : null))
-        .filter((x): x is NonNullable<typeof x> => !!x);
-
       if (rows.length === 0) {
         await pause(250);
         continue;
       }
 
-      syncedPlaylists.push({
-        name: p.name,
-        description: p.description,
-        image: p.image,
-        rows,
-      });
-      await pause(500);
-    }
-
-    const { data: existingPlaylists } = await supabase.from("playlists").select("id").eq("user_id", userId);
-    const existingIds = (existingPlaylists ?? []).map((playlist) => playlist.id);
-    if (existingIds.length > 0) {
-      const { error: deleteTracksError } = await supabase.from("playlist_tracks").delete().in("playlist_id", existingIds);
-      if (deleteTracksError) {
-        console.error("Delete old playlist tracks failed", deleteTracksError);
-        throw new Error("Failed to refresh playlists");
-      }
-    }
-
-    const { error: deletePlaylistsError } = await supabase.from("playlists").delete().eq("user_id", userId);
-    if (deletePlaylistsError) {
-      console.error("Delete old playlists failed", deletePlaylistsError);
-      throw new Error("Failed to refresh playlists");
-    }
-
-    let totalTracks = 0;
-    for (const p of syncedPlaylists) {
       const { data: pl, error: plErr } = await supabase
         .from("playlists")
         .insert({
@@ -443,6 +447,7 @@ export const syncPlaylists = createServerFn({ method: "POST" })
           description: p.description,
           cover_url: p.image,
           source: "spotify",
+          spotify_playlist_id: p.id,
         })
         .select("id")
         .single();
@@ -451,16 +456,71 @@ export const syncPlaylists = createServerFn({ method: "POST" })
         continue;
       }
 
-      const rows = p.rows.map((row) => ({ ...row, playlist_id: pl.id }));
-      const { error: insertTracksError } = await supabase.from("playlist_tracks").insert(rows);
-      if (insertTracksError) {
-        console.error("Insert playlist tracks failed", p.name, insertTracksError);
+      const tracksWithPlaylist = rows.map((row) => ({ ...row, playlist_id: pl.id }));
+      const { error: insErr } = await supabase.from("playlist_tracks").insert(tracksWithPlaylist);
+      if (insErr) {
+        console.error("Insert playlist tracks failed", p.name, insErr);
         await supabase.from("playlists").delete().eq("id", pl.id);
         continue;
       }
-
+      inserted++;
       totalTracks += rows.length;
+      await pause(500);
     }
 
-    return { playlists: syncedPlaylists.length, tracks: totalTracks };
+    let message: string | null = null;
+    if (rateLimitedAny) {
+      message = `Spotify rate-limited the sync. Imported ${inserted} new playlists with ${totalTracks} tracks before stopping. Wait a few minutes and run sync again to continue.`;
+    } else if (partialReason) {
+      message = partialReason;
+    } else if (inserted === 0 && skippedCount > 0) {
+      message = `All ${skippedCount} playlists are already synced — nothing new to import.`;
+    }
+
+    return {
+      playlists: inserted,
+      tracks: totalTracks,
+      skipped: skippedCount,
+      partial: rateLimitedAny || partialReason !== null,
+      message,
+    };
+  });
+
+export const syncSinglePlaylist = createServerFn({ method: "POST" })
+  .middleware([requireServerFnAuth])
+  .inputValidator((d: { playlistId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const userId = context.userId;
+    const supabase = context.supabase;
+
+    const { data: pl } = await supabase
+      .from("playlists")
+      .select("id, user_id, source, spotify_playlist_id")
+      .eq("id", data.playlistId)
+      .maybeSingle();
+    if (!pl || pl.user_id !== userId) throw new Error("Playlist not found");
+    if (pl.source !== "spotify" || !pl.spotify_playlist_id) {
+      throw new Error("This playlist isn't linked to Spotify");
+    }
+
+    const accessToken = await refreshSpotifyToken(supabase, userId);
+    const { rows, status } = await fetchAllPlaylistTracks(pl.spotify_playlist_id, accessToken, userId);
+    if (!rows) {
+      if (status === 429) throw new Error("Spotify is rate-limiting right now — please wait a few minutes and try again");
+      if (status === 403) throw new Error("Spotify denied access to this playlist (it may be an algorithmic playlist like Discover Weekly that isn't accessible to third-party apps)");
+      throw new Error(`Spotify returned ${status} when fetching this playlist`);
+    }
+
+    // Replace existing tracks
+    await supabase.from("playlist_tracks").delete().eq("playlist_id", pl.id);
+
+    if (rows.length === 0) return { tracks: 0 };
+
+    const tracksWithPlaylist = rows.map((row) => ({ ...row, playlist_id: pl.id }));
+    const { error: insErr } = await supabase.from("playlist_tracks").insert(tracksWithPlaylist);
+    if (insErr) {
+      console.error("Insert single playlist tracks failed", insErr);
+      throw new Error("Failed to save tracks");
+    }
+    return { tracks: rows.length };
   });
