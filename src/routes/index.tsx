@@ -42,7 +42,7 @@ function Landing() {
             <br />playing on YouTube.
           </h2>
           <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-            Connect your Spotify account, sync your liked songs and playlists, and stream every track via YouTube — all in one beautiful player.
+            Connect your Spotify account, sync your liked songs and playlists, and stream every track via YouTube — all in one player.
           </p>
           <div className="mt-10 flex justify-center gap-3">
             <Link to={ctaTo}>
