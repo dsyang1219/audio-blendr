@@ -86,6 +86,7 @@ export function Player() {
   useEffect(() => {
     if (!playerRef.current) return;
     const id = setInterval(() => {
+      if (seeking) return;
       try {
         const p = playerRef.current?.getCurrentTime?.() ?? 0;
         const d = playerRef.current?.getDuration?.() ?? 0;
@@ -96,7 +97,7 @@ export function Player() {
       }
     }, 500);
     return () => clearInterval(id);
-  }, [videoId]);
+  }, [videoId, seeking]);
 
   // React to isPlaying toggle
   useEffect(() => {
