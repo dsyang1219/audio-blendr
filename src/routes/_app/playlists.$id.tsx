@@ -6,6 +6,7 @@ import { TrackList } from "@/components/TrackList";
 import { Music, Trash2, Play, Shuffle, RefreshCw, Pencil, Upload, X } from "lucide-react";
 import type { Track } from "@/lib/player-context";
 import { usePlayer } from "@/lib/player-context";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
