@@ -347,7 +347,7 @@ function PlaylistDetail() {
           tracks={tracks}
           table="playlist_tracks"
           playlistId={id}
-          isCustomPlaylist={isCustom}
+          isCustomPlaylist={isEditable}
           onTrackRemoved={load}
         />
       )}
