@@ -23,12 +23,9 @@ function Landing() {
     <div className="relative min-h-screen overflow-hidden text-foreground">
       <div className="absolute inset-0 -z-10 bg-gradient-mesh" />
       <header className="container mx-auto flex items-center justify-between px-6 py-6">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <h1 className="text-xl font-bold tracking-tight text-gradient">Audio Blendr</h1>
-        </div>
+        <Link to="/" className="block">
+          <Logo size="md" />
+        </Link>
         <div className="flex gap-2">
           <Link to="/auth"><Button variant="ghost">Sign in</Button></Link>
           <Link to="/auth"><Button className="bg-gradient-primary shadow-glow hover:shadow-pink hover:scale-105 transition-all">Get started</Button></Link>
