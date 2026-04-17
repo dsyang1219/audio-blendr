@@ -242,12 +242,12 @@ function PlaylistDetail() {
             {tracks.length === 0 ? "Sync from Spotify" : "Re-sync from Spotify"}
           </Button>
         )}
-        {isCustom && (
+        {isEditable && (
           <Button onClick={openEdit} variant="outline" size="lg" className="gap-2">
             <Pencil className="h-4 w-4" /> Edit
           </Button>
         )}
-        {isCustom && (
+        {isEditable && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="lg" className="gap-2">
