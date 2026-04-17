@@ -2,11 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrackList } from "@/components/TrackList";
-import { Music, Trash2, Play, Shuffle, Youtube, Loader2 } from "lucide-react";
+import { Music, Trash2, Play, Shuffle } from "lucide-react";
 import type { Track } from "@/lib/player-context";
 import { usePlayer } from "@/lib/player-context";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,8 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
-import { addYouTubeVideo } from "@/utils/youtube-import.functions";
+import { AddSongDialog } from "@/components/AddSongDialog";
 
 export const Route = createFileRoute("/_app/playlists/$id")({
   component: PlaylistDetail,
@@ -31,23 +29,21 @@ interface PlaylistMeta {
   description: string | null;
   cover_url: string | null;
   source: string;
+  user_id: string;
 }
 
 function PlaylistDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { playQueue } = usePlayer();
-  const addYTVideo = useServerFn(addYouTubeVideo);
   const [playlist, setPlaylist] = useState<PlaylistMeta | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
-  const [ytUrl, setYtUrl] = useState("");
-  const [adding, setAdding] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
     Promise.all([
-      supabase.from("playlists").select("name, description, cover_url, source").eq("id", id).maybeSingle(),
+      supabase.from("playlists").select("name, description, cover_url, source, user_id").eq("id", id).maybeSingle(),
       supabase.from("playlist_tracks").select("*").eq("playlist_id", id).order("position"),
     ]).then(([pl, tr]) => {
       setPlaylist(pl.data as PlaylistMeta | null);
@@ -70,21 +66,6 @@ function PlaylistDetail() {
   const handleShuffle = () => {
     if (queueTracks.length === 0) return;
     playQueue(queueTracks, 0, { shuffle: true });
-  };
-
-  const handleAddYT = async () => {
-    if (!ytUrl.trim()) return;
-    setAdding(true);
-    try {
-      const res = await addYTVideo({ data: { url: ytUrl.trim(), playlistId: id } });
-      toast.success(`Added "${res.title}"`);
-      setYtUrl("");
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to add video");
-    } finally {
-      setAdding(false);
-    }
   };
 
   const deletePlaylist = async () => {
@@ -138,6 +119,7 @@ function PlaylistDetail() {
         <Button onClick={handleShuffle} disabled={tracks.length === 0} size="lg" variant="secondary" className="gap-2">
           <Shuffle className="h-5 w-5" /> Shuffle
         </Button>
+        <AddSongDialog playlistId={id} onAdded={load} />
         {isCustom && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -161,30 +143,9 @@ function PlaylistDetail() {
         )}
       </div>
 
-      {isCustom && (
-        <div className="mb-6 flex items-center gap-2 rounded-lg border border-border bg-card/40 p-3">
-          <Youtube className="h-5 w-5 flex-shrink-0 text-red-500" />
-          <Input
-            placeholder="Paste a YouTube URL to add a song"
-            value={ytUrl}
-            onChange={(e) => setYtUrl(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") void handleAddYT();
-            }}
-            disabled={adding}
-            className="flex-1"
-          />
-          <Button onClick={handleAddYT} disabled={adding || !ytUrl.trim()}>
-            {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
-          </Button>
-        </div>
-      )}
-
       {tracks.length === 0 ? (
         <p className="text-muted-foreground">
-          {isCustom
-            ? "No tracks yet. Paste a YouTube URL above or use the ⋯ menu on songs in your library."
-            : "No tracks in this playlist."}
+          No tracks yet. Click "Add song" above to add from Spotify or YouTube.
         </p>
       ) : (
         <TrackList
