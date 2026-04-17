@@ -203,9 +203,9 @@ function mapTrack(t: SpotifyTrackObj) {
     spotify_track_id: t.id,
     title: t.name,
     artist: t.artists.map((a) => a.name).join(", "),
-    album: null as string | null,
-    album_art_url: null as string | null,
-    duration_seconds: null as number | null,
+    album: t.album?.name ?? null,
+    album_art_url: t.album?.images?.[0]?.url ?? null,
+    duration_seconds: t.duration_ms ? Math.round(t.duration_ms / 1000) : null,
   };
 }
 
