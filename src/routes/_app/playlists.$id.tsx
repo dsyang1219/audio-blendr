@@ -32,6 +32,7 @@ interface PlaylistMeta {
   cover_url: string | null;
   source: string;
   user_id: string;
+  spotify_playlist_id: string | null;
 }
 
 function PlaylistDetail() {
@@ -41,11 +42,13 @@ function PlaylistDetail() {
   const [playlist, setPlaylist] = useState<PlaylistMeta | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const syncOneFn = useServerFn(syncSinglePlaylist);
 
   const load = useCallback(() => {
     setLoading(true);
     Promise.all([
-      supabase.from("playlists").select("name, description, cover_url, source, user_id").eq("id", id).maybeSingle(),
+      supabase.from("playlists").select("name, description, cover_url, source, user_id, spotify_playlist_id").eq("id", id).maybeSingle(),
       supabase.from("playlist_tracks").select("*").eq("playlist_id", id).order("position"),
     ]).then(([pl, tr]) => {
       setPlaylist(pl.data as PlaylistMeta | null);
@@ -68,6 +71,19 @@ function PlaylistDetail() {
   const handleShuffle = () => {
     if (queueTracks.length === 0) return;
     playQueue(queueTracks, 0, { shuffle: true });
+  };
+
+  const handleSyncFromSpotify = async () => {
+    setSyncing(true);
+    try {
+      const r = await syncOneFn({ data: { playlistId: id } });
+      toast.success(`Imported ${r.tracks} tracks from Spotify`);
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to sync");
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const deletePlaylist = async () => {
