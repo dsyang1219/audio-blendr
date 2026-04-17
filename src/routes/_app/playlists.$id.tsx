@@ -1,34 +1,76 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TrackList } from "@/components/TrackList";
-import { Music } from "lucide-react";
+import { Music, Trash2 } from "lucide-react";
 import type { Track } from "@/lib/player-context";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/playlists/$id")({
   component: PlaylistDetail,
 });
 
+interface PlaylistMeta {
+  name: string;
+  description: string | null;
+  cover_url: string | null;
+  source: string;
+}
+
 function PlaylistDetail() {
   const { id } = Route.useParams();
-  const [playlist, setPlaylist] = useState<{ name: string; description: string | null; cover_url: string | null } | null>(null);
+  const navigate = useNavigate();
+  const [playlist, setPlaylist] = useState<PlaylistMeta | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
     Promise.all([
-      supabase.from("playlists").select("name, description, cover_url").eq("id", id).maybeSingle(),
+      supabase.from("playlists").select("name, description, cover_url, source").eq("id", id).maybeSingle(),
       supabase.from("playlist_tracks").select("*").eq("playlist_id", id).order("position"),
     ]).then(([pl, tr]) => {
-      setPlaylist(pl.data);
+      setPlaylist(pl.data as PlaylistMeta | null);
       setTracks((tr.data ?? []) as Track[]);
       setLoading(false);
     });
   }, [id]);
 
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const deletePlaylist = async () => {
+    const { error: tracksError } = await supabase.from("playlist_tracks").delete().eq("playlist_id", id);
+    if (tracksError) {
+      toast.error(tracksError.message);
+      return;
+    }
+    const { error } = await supabase.from("playlists").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Playlist deleted");
+    navigate({ to: "/playlists" });
+  };
+
   if (loading) return <div className="p-8 text-muted-foreground">Loading…</div>;
   if (!playlist) return <div className="p-8 text-muted-foreground">Playlist not found</div>;
+
+  const isCustom = playlist.source === "custom";
 
   return (
     <div className="p-8">
@@ -42,18 +84,51 @@ function PlaylistDetail() {
             </div>
           )}
         </div>
-        <div>
-          <p className="text-xs font-bold uppercase">Playlist</p>
+        <div className="flex-1">
+          <p className="text-xs font-bold uppercase">{isCustom ? "Custom Playlist" : "Playlist"}</p>
           <h1 className="mt-2 text-5xl font-bold">{playlist.name}</h1>
           {playlist.description && <p className="mt-2 text-muted-foreground">{playlist.description}</p>}
-          <p className="mt-3 text-sm text-muted-foreground">{tracks.length} {tracks.length === 1 ? "song" : "songs"}</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {tracks.length} {tracks.length === 1 ? "song" : "songs"}
+          </p>
+          {isCustom && (
+            <div className="mt-4">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete playlist
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this playlist?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently remove "{playlist.name}" and all of its tracks. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={deletePlaylist}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </div>
       </div>
 
       {tracks.length === 0 ? (
-        <p className="text-muted-foreground">No tracks in this playlist.</p>
+        <p className="text-muted-foreground">
+          {isCustom ? "No tracks yet. Add some from your library using the ⋯ menu on any song." : "No tracks in this playlist."}
+        </p>
       ) : (
-        <TrackList tracks={tracks} table="playlist_tracks" />
+        <TrackList
+          tracks={tracks}
+          table="playlist_tracks"
+          playlistId={id}
+          isCustomPlaylist={isCustom}
+          onTrackRemoved={load}
+        />
       )}
     </div>
   );
