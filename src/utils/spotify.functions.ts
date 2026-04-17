@@ -203,9 +203,9 @@ function mapTrack(t: SpotifyTrackObj) {
     spotify_track_id: t.id,
     title: t.name,
     artist: t.artists.map((a) => a.name).join(", "),
-    album: t.album?.name ?? null,
-    album_art_url: t.album?.images?.[0]?.url ?? null,
-    duration_seconds: Math.round(t.duration_ms / 1000),
+    album: null as string | null,
+    album_art_url: null as string | null,
+    duration_seconds: null as number | null,
   };
 }
 
@@ -344,8 +344,9 @@ export const addSpotifyTrackToPlaylist = createServerFn({ method: "POST" })
     return { title: data.title };
   });
 
-// Only request fields we actually store — slashes payload size dramatically and reduces 429s.
-const TRACK_FIELDS = "next,items(track(id,name,duration_ms,artists(name),album(name,images(url))))";
+// Only request the bare-minimum fields: track id, title, artist names.
+// Skipping album / images / duration shrinks payloads and reduces 429s.
+const TRACK_FIELDS = "next,items(track(id,name,artists(name)))";
 const PLAYLIST_LIST_FIELDS = "next,items(id,name,description,images(url))";
 
 async function fetchAllPlaylistTracks(
