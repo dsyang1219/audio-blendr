@@ -61,7 +61,7 @@ async function fetchVideoMeta(videoIds: string[]): Promise<YTVideoMeta[]> {
 
 export const addYouTubeVideo = createServerFn({ method: "POST" })
   .middleware([requireServerFnAuth])
-  .inputValidator((d: { url: string }) => d)
+  .inputValidator((d: { url: string; playlistId?: string }) => d)
   .handler(async ({ data, context }) => {
     const userId = context.userId;
     const videoId = extractVideoId(data.url.trim());
@@ -75,6 +75,39 @@ export const addYouTubeVideo = createServerFn({ method: "POST" })
     const artist = v.snippet.channelTitle;
     const art = v.snippet.thumbnails?.high?.url ?? v.snippet.thumbnails?.medium?.url ?? null;
     const duration = parseISODuration(v.contentDetails.duration);
+
+    if (data.playlistId) {
+      // Verify the playlist belongs to this user
+      const { data: pl } = await supabaseAdmin
+        .from("playlists")
+        .select("id, user_id")
+        .eq("id", data.playlistId)
+        .maybeSingle();
+      if (!pl || pl.user_id !== userId) throw new Error("Playlist not found");
+
+      const { count } = await supabaseAdmin
+        .from("playlist_tracks")
+        .select("id", { count: "exact", head: true })
+        .eq("playlist_id", data.playlistId);
+
+      const { error } = await supabaseAdmin.from("playlist_tracks").insert({
+        user_id: userId,
+        playlist_id: data.playlistId,
+        title,
+        artist,
+        album: null,
+        album_art_url: art,
+        youtube_video_id: v.id,
+        duration_seconds: duration,
+        source: "youtube",
+        position: count ?? 0,
+      });
+      if (error) {
+        console.error("Insert YT track into playlist failed", error);
+        throw new Error("Failed to add video to playlist");
+      }
+      return { title, videoId: v.id };
+    }
 
     const { error } = await supabaseAdmin.from("liked_tracks").insert({
       user_id: userId,

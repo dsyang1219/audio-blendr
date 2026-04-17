@@ -17,24 +17,48 @@ interface PlayerContextValue {
   currentIndex: number;
   current: Track | null;
   isPlaying: boolean;
+  shuffle: boolean;
   setIsPlaying: (v: boolean) => void;
-  playQueue: (tracks: Track[], startIndex?: number) => void;
+  setShuffle: (v: boolean) => void;
+  toggleShuffle: () => void;
+  playQueue: (tracks: Track[], startIndex?: number, opts?: { shuffle?: boolean }) => void;
   playNext: () => void;
   playPrev: () => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const [queue, setQueue] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [shuffle, setShuffle] = useState(false);
 
   const current = currentIndex >= 0 && currentIndex < queue.length ? queue[currentIndex] : null;
 
-  const playQueue = (tracks: Track[], startIndex = 0) => {
-    setQueue(tracks);
-    setCurrentIndex(startIndex);
+  const playQueue = (tracks: Track[], startIndex = 0, opts?: { shuffle?: boolean }) => {
+    const useShuffle = opts?.shuffle ?? false;
+    if (useShuffle) {
+      // Put the chosen track first, then shuffle the rest
+      const chosen = tracks[startIndex];
+      const rest = tracks.filter((_, i) => i !== startIndex);
+      const shuffled = chosen ? [chosen, ...shuffleArray(rest)] : shuffleArray(tracks);
+      setQueue(shuffled);
+      setCurrentIndex(0);
+      setShuffle(true);
+    } else {
+      setQueue(tracks);
+      setCurrentIndex(startIndex);
+    }
     setIsPlaying(true);
   };
 
@@ -46,8 +70,37 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setCurrentIndex((i) => (i > 0 ? i - 1 : i));
   };
 
+  const toggleShuffle = () => {
+    setShuffle((prev) => {
+      const next = !prev;
+      if (next && queue.length > 1 && currentIndex >= 0) {
+        // Shuffle the upcoming tracks, keep current in place
+        const currentTrack = queue[currentIndex];
+        const upcoming = queue.slice(currentIndex + 1);
+        const shuffled = shuffleArray(upcoming);
+        const newQueue = [...queue.slice(0, currentIndex), currentTrack, ...shuffled];
+        setQueue(newQueue);
+      }
+      return next;
+    });
+  };
+
   return (
-    <PlayerContext.Provider value={{ queue, currentIndex, current, isPlaying, setIsPlaying, playQueue, playNext, playPrev }}>
+    <PlayerContext.Provider
+      value={{
+        queue,
+        currentIndex,
+        current,
+        isPlaying,
+        shuffle,
+        setIsPlaying,
+        setShuffle,
+        toggleShuffle,
+        playQueue,
+        playNext,
+        playPrev,
+      }}
+    >
       {children}
     </PlayerContext.Provider>
   );
