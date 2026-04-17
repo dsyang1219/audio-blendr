@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Music, Plus } from "lucide-react";
+import { Music, Plus, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,10 @@ function PlaylistsIndex() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = () => {
     supabase
@@ -47,13 +50,56 @@ function PlaylistsIndex() {
     load();
   }, []);
 
+  const onPickCover = (file: File | null) => {
+    if (!file) {
+      setCoverFile(null);
+      setCoverPreview(null);
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please pick an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
+  };
+
+  const resetForm = () => {
+    setName("");
+    setDescription("");
+    setCoverFile(null);
+    setCoverPreview(null);
+  };
+
   const create = async () => {
     if (!user || !name.trim()) return;
     setBusy(true);
+
+    let coverUrl: string | null = null;
+    if (coverFile) {
+      const ext = coverFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("playlist-covers")
+        .upload(path, coverFile, { contentType: coverFile.type, upsert: false });
+      if (upErr) {
+        setBusy(false);
+        toast.error(`Cover upload failed: ${upErr.message}`);
+        return;
+      }
+      const { data: pub } = supabase.storage.from("playlist-covers").getPublicUrl(path);
+      coverUrl = pub.publicUrl;
+    }
+
     const { error } = await supabase.from("playlists").insert({
       user_id: user.id,
       name: name.trim(),
       description: description.trim() || null,
+      cover_url: coverUrl,
       source: "custom",
     });
     setBusy(false);
@@ -62,8 +108,7 @@ function PlaylistsIndex() {
       return;
     }
     toast.success("Playlist created");
-    setName("");
-    setDescription("");
+    resetForm();
     setOpen(false);
     load();
   };
