@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { TrackList } from "@/components/TrackList";
-import { Music, Trash2, Play, Shuffle } from "lucide-react";
+import { Music, Trash2, Play, Shuffle, RefreshCw } from "lucide-react";
 import type { Track } from "@/lib/player-context";
 import { usePlayer } from "@/lib/player-context";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { AddSongDialog } from "@/components/AddSongDialog";
+import { syncSinglePlaylist } from "@/utils/spotify.functions";
 
 export const Route = createFileRoute("/_app/playlists/$id")({
   component: PlaylistDetail,
