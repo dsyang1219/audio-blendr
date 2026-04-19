@@ -40,9 +40,18 @@ export const resolveYouTube = createServerFn({ method: "POST" })
     ];
 
     let videoId: string | null = null;
+    let quotaHit = false;
     for (const query of queries) {
-      videoId = await searchYouTubeOnce(query);
-      if (videoId) break;
+      try {
+        videoId = await searchYouTubeOnce(query);
+        if (videoId) break;
+      } catch (e) {
+        if (e instanceof YouTubeQuotaError) {
+          quotaHit = true;
+          break;
+        }
+        throw e;
+      }
     }
 
     if (videoId) {
@@ -50,8 +59,13 @@ export const resolveYouTube = createServerFn({ method: "POST" })
       return { videoId };
     }
 
+    if (quotaHit) {
+      console.warn(`[youtube] Quota exhausted while resolving "${row.artist} - ${row.title}"`);
+      return { videoId: null, quotaHit: true };
+    }
+
     console.error(`[youtube] Could not resolve track: "${row.artist} - ${row.title}"`);
-    return { videoId: null };
+    return { videoId: null, quotaHit: false };
   });
 
 export const batchResolveYouTube = createServerFn({ method: "POST" })
