@@ -9,7 +9,6 @@ import {
   disconnectSpotify,
 } from "@/utils/spotify.functions";
 import { importYouTubePlaylist, addYouTubeVideo } from "@/utils/youtube-import.functions";
-import { batchResolveYouTube } from "@/utils/youtube.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,23 +33,6 @@ function ConnectPage() {
   const disconnectFn = useServerFn(disconnectSpotify);
   const importPlaylistFn = useServerFn(importYouTubePlaylist);
   const addVideoFn = useServerFn(addYouTubeVideo);
-  const batchResolveFn = useServerFn(batchResolveYouTube);
-
-  const runBatchResolve = async (silent = false) => {
-    try {
-      const r = await batchResolveFn({ data: {} });
-      if (r.total === 0) {
-        if (!silent) toast.success("All tracks already resolved");
-        return;
-      }
-      const msg = `Resolved ${r.resolved}/${r.attempted} YouTube IDs · ${r.remaining} left`;
-      if (r.quotaHit) toast.warning(`${msg} (daily quota hit)`);
-      else if (r.remaining > 0) toast.success(`${msg} — run again later for more`);
-      else toast.success(msg);
-    } catch (e) {
-      if (!silent) toast.error(e instanceof Error ? e.message : "Resolve failed");
-    }
-  };
 
   useEffect(() => {
     getStatusFn().then(setStatus).catch(() => setStatus({ connected: false, displayName: null }));
@@ -161,7 +143,6 @@ function ConnectPage() {
         <p className="mt-1 text-muted-foreground">Connect Spotify and add YouTube tracks to build your unified library.</p>
       </div>
 
-      {/* Spotify */}
       <Card className="glass border-border/60 hover-lift">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
@@ -172,7 +153,7 @@ function ConnectPage() {
           </CardTitle>
           <CardDescription>
             {status?.connected
-              ? `Connected as ${status.displayName ?? "Spotify user"}.`
+              ? `Connected as ${status.displayName ?? "Spotify user"}. Tracks resolve YouTube on first play and cache automatically.`
               : "Sync your liked songs and playlists from Spotify."}
           </CardDescription>
         </CardHeader>
@@ -194,18 +175,6 @@ function ConnectPage() {
                 {busy === "playlists" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sync playlists
               </Button>
-              <Button
-                onClick={async () => {
-                  setBusy("resolve");
-                  await runBatchResolve(false);
-                  setBusy(null);
-                }}
-                disabled={!!busy}
-                variant="secondary"
-              >
-                {busy === "resolve" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Resolve YouTube IDs
-              </Button>
               <Button onClick={disconnect} disabled={!!busy} variant="ghost">
                 <Unplug className="mr-2 h-4 w-4" /> Disconnect
               </Button>
@@ -214,7 +183,6 @@ function ConnectPage() {
         </CardContent>
       </Card>
 
-      {/* YouTube single video */}
       <Card className="glass border-border/60 hover-lift">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
@@ -240,7 +208,6 @@ function ConnectPage() {
         </CardContent>
       </Card>
 
-      {/* YouTube playlist */}
       <Card className="glass border-border/60 hover-lift">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
