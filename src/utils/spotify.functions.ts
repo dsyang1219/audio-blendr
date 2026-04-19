@@ -507,17 +507,22 @@ export const syncSinglePlaylist = createServerFn({ method: "POST" })
 
     const accessToken = await refreshSpotifyToken(supabase, userId);
 
-    // Step 1: ONE Spotify call to get just titles + artists (minimal fields).
-    const minimalFields = "items(track(id,name,artists(name)))";
-    const url = `${SPOTIFY_API}/playlists/${pl.spotify_playlist_id}/tracks?limit=100&fields=${encodeURIComponent(minimalFields)}`;
-    const res = await spotifyFetch(url, accessToken, { maxRetries: 2, maxWaitMs: 5_000 });
-    if (!res.ok) {
-      if (res.status === 429) throw new Error("Spotify is rate-limiting right now — please wait a few minutes and try again");
-      if (res.status === 403) throw new Error("Spotify denied access to this playlist (it may be an algorithmic playlist like Discover Weekly)");
-      throw new Error(`Spotify returned ${res.status} when fetching this playlist`);
+    // Spotify's /playlists/{id}/tracks endpoint is currently returning 403 for
+    // normal user playlists on this app, while the parent playlist endpoint
+    // still exposes the same items payload. Use that as the primary path here.
+    const playlistRes = await spotifyFetch(`${SPOTIFY_API}/playlists/${pl.spotify_playlist_id}`, accessToken, {
+      maxRetries: 2,
+      maxWaitMs: 5_000,
+    });
+    if (!playlistRes.ok) {
+      if (playlistRes.status === 429) throw new Error("Spotify is rate-limiting right now — please wait a few minutes and try again");
+      if (playlistRes.status === 403) throw new Error("Spotify denied access to this playlist");
+      throw new Error(`Spotify returned ${playlistRes.status} when fetching this playlist`);
     }
-    const json = (await res.json()) as { items: { track: { id: string; name: string; artists: { name: string }[] } | null }[] };
-    const seeds = json.items
+    const json = (await playlistRes.json()) as {
+      items?: { track?: { id: string; name: string; artists: { name: string }[] } | null }[];
+    };
+    const seeds = (json.items ?? [])
       .map((it) => it.track)
       .filter((t): t is { id: string; name: string; artists: { name: string }[] } => !!t)
       .map((t) => ({
