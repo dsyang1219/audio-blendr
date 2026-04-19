@@ -43,39 +43,26 @@ export function Player() {
       const preferredTable = current.sourceTable ?? (current.spotify_track_id ? "liked_tracks" : "playlist_tracks");
       const fallbackTable = preferredTable === "liked_tracks" ? "playlist_tracks" : "liked_tracks";
 
+      // Run both lookups in parallel — take the first successful videoId.
+      // findTrackRow already does an id + (title,artist) fallback per table,
+      // so racing the two tables minimizes latency on first play.
+      const lookupOne = (table: typeof preferredTable) =>
+        resolveYT({
+          data: { table, trackId: current.id, title: current.title, artist: current.artist },
+        }).catch(() => ({ videoId: null as string | null }));
+
       try {
-        const result = await resolveYT({
-          data: { table: preferredTable, trackId: current.id, title: current.title, artist: current.artist },
-        });
-        if (!cancelled && result.videoId) {
-          setVideoId(result.videoId);
-          setTrackVideoId(current.id, result.videoId);
-          return;
-        }
-
-        const fallback = await resolveYT({
-          data: { table: fallbackTable, trackId: current.id, title: current.title, artist: current.artist },
-        });
-        if (!cancelled && fallback.videoId) {
-          setVideoId(fallback.videoId);
-          setTrackVideoId(current.id, fallback.videoId);
-          return;
-        }
-
-        if (!cancelled) toast.error(`Couldn't find "${current.title}" on YouTube`);
-      } catch {
-        try {
-          const fallback = await resolveYT({
-            data: { table: fallbackTable, trackId: current.id, title: current.title, artist: current.artist },
-          });
-          if (!cancelled && fallback.videoId) {
-            setVideoId(fallback.videoId);
-            setTrackVideoId(current.id, fallback.videoId);
-            return;
-          }
-          if (!cancelled) toast.error(`Couldn't find "${current.title}" on YouTube`);
-        } catch {
-          if (!cancelled) toast.error("YouTube lookup failed");
+        const [preferred, fallback] = await Promise.all([
+          lookupOne(preferredTable),
+          lookupOne(fallbackTable),
+        ]);
+        const videoId = preferred.videoId ?? fallback.videoId ?? null;
+        if (cancelled) return;
+        if (videoId) {
+          setVideoId(videoId);
+          setTrackVideoId(current.id, videoId);
+        } else {
+          toast.error(`Couldn't find "${current.title}" on YouTube`);
         }
       } finally {
         if (!cancelled) setResolving(false);

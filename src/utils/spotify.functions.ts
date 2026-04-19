@@ -547,48 +547,22 @@ export const syncSinglePlaylist = createServerFn({ method: "POST" })
       return { tracks: 0 };
     }
 
-    // Step 2: Resolve each track to a YouTube video ID (search.list = 100 quota each).
-    const resolved: Array<{ seed: typeof seeds[number]; videoId: string }> = [];
-    let quotaHit = false;
-    for (const seed of seeds) {
-      try {
-        const videoId = await searchYouTubeOnce(buildYouTubeQuery(seed.artist, seed.title));
-        if (videoId) resolved.push({ seed, videoId });
-      } catch (e) {
-        if (e instanceof YouTubeQuotaError) {
-          quotaHit = true;
-          break;
-        }
-        console.error("[sync] YouTube search failed for", seed.title, e);
-      }
-    }
-
-    if (resolved.length === 0) {
-      throw new Error(quotaHit
-        ? "YouTube quota exhausted — try again tomorrow"
-        : "Could not find any of these tracks on YouTube");
-    }
-
-    // Step 3: ONE YouTube videos.list call per 50 IDs to fetch all metadata.
-    const metaMap = await fetchYouTubeVideoMetadata(resolved.map((r) => r.videoId));
-
-    // Step 4: Build rows using YouTube metadata, falling back to Spotify title/artist.
-    const rows = resolved.map((r, position) => {
-      const meta = metaMap.get(r.videoId);
-      return {
-        user_id: userId,
-        playlist_id: pl.id,
-        title: r.seed.title,
-        artist: r.seed.artist,
-        album: meta?.channel ?? null,
-        album_art_url: meta?.thumbnail ?? null,
-        spotify_track_id: r.seed.spotify_track_id,
-        youtube_video_id: r.videoId,
-        duration_seconds: meta?.durationSeconds ?? null,
-        source: "spotify",
-        position,
-      };
-    });
+    // Insert metadata only — YouTube IDs are resolved lazily on first play
+    // (and cached back to the row), like liked songs. This avoids the heavy
+    // upfront quota cost of YouTube search.list (100 units per track).
+    const rows = seeds.map((seed, position) => ({
+      user_id: userId,
+      playlist_id: pl.id,
+      title: seed.title,
+      artist: seed.artist,
+      album: null,
+      album_art_url: null,
+      spotify_track_id: seed.spotify_track_id,
+      youtube_video_id: null,
+      duration_seconds: null,
+      source: "spotify",
+      position,
+    }));
 
     await supabase.from("playlist_tracks").delete().eq("playlist_id", pl.id);
     const { error: insErr } = await supabase.from("playlist_tracks").insert(rows);
@@ -600,7 +574,7 @@ export const syncSinglePlaylist = createServerFn({ method: "POST" })
     return {
       tracks: rows.length,
       attempted: seeds.length,
-      quotaHit,
+      quotaHit: false,
     };
   });
 
