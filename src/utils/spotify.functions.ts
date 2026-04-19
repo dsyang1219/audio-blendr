@@ -529,7 +529,10 @@ export const syncSinglePlaylist = createServerFn({ method: "POST" })
             }[];
           };
     };
-    const playlistItems = Array.isArray(json.items) ? json.items : (json.items?.items ?? []);
+    const playlistItems = (Array.isArray(json.items) ? json.items : (json.items?.items ?? [])) as Array<{
+      item?: { id: string; name: string; artists: { name: string }[] } | null;
+      track?: { id: string; name: string; artists: { name: string }[] } | null;
+    }>;
     const seeds = playlistItems
       .map((it) => it.track ?? it.item ?? null)
       .filter((t): t is { id: string; name: string; artists: { name: string }[] } => !!t)
