@@ -520,10 +520,18 @@ export const syncSinglePlaylist = createServerFn({ method: "POST" })
       throw new Error(`Spotify returned ${playlistRes.status} when fetching this playlist`);
     }
     const json = (await playlistRes.json()) as {
-      items?: { track?: { id: string; name: string; artists: { name: string }[] } | null }[];
+      items?:
+        | { track?: { id: string; name: string; artists: { name: string }[] } | null }[]
+        | {
+            items?: {
+              item?: { id: string; name: string; artists: { name: string }[] } | null;
+              track?: { id: string; name: string; artists: { name: string }[] } | null;
+            }[];
+          };
     };
-    const seeds = (json.items ?? [])
-      .map((it) => it.track)
+    const playlistItems = Array.isArray(json.items) ? json.items : (json.items?.items ?? []);
+    const seeds = playlistItems
+      .map((it) => it.track ?? it.item ?? null)
       .filter((t): t is { id: string; name: string; artists: { name: string }[] } => !!t)
       .map((t) => ({
         spotify_track_id: t.id,
