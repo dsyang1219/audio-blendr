@@ -152,6 +152,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          sort_order: number
           source: string
           spotify_playlist_id: string | null
           updated_at: string
@@ -163,6 +164,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          sort_order?: number
           source?: string
           spotify_playlist_id?: string | null
           updated_at?: string
@@ -174,6 +176,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          sort_order?: number
           source?: string
           spotify_playlist_id?: string | null
           updated_at?: string
