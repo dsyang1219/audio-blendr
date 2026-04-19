@@ -49,7 +49,7 @@ export function Player() {
       const lookupOne = (table: typeof preferredTable) =>
         resolveYT({
           data: { table, trackId: current.id, title: current.title, artist: current.artist },
-        }).catch(() => ({ videoId: null as string | null }));
+        }).catch(() => ({ videoId: null as string | null, quotaHit: false }));
 
       try {
         const [preferred, fallback] = await Promise.all([
@@ -57,10 +57,13 @@ export function Player() {
           lookupOne(fallbackTable),
         ]);
         const videoId = preferred.videoId ?? fallback.videoId ?? null;
+        const quotaHit = preferred.quotaHit || fallback.quotaHit;
         if (cancelled) return;
         if (videoId) {
           setVideoId(videoId);
           setTrackVideoId(current.id, videoId);
+        } else if (quotaHit) {
+          toast.error("YouTube daily search quota reached — try again after midnight Pacific time", { id: "yt-quota" });
         } else {
           toast.error(`Couldn't find "${current.title}" on YouTube`);
         }
