@@ -28,6 +28,7 @@ function AppLayout() {
     supabase
       .from("playlists")
       .select("id, name, cover_url")
+      .order("sort_order", { ascending: true })
       .order("updated_at", { ascending: false })
       .then(({ data }) => setPlaylists(data ?? []));
   }, [user, location.pathname]);
