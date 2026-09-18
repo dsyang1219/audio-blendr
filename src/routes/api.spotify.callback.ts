@@ -1,7 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { getSpotifyAppOrigin, getSpotifyRedirectUri, normalizeSpotifyReturnOrigin, parseSpotifyState } from "@/utils/spotify-auth";
+import {
+  getSpotifyAppOrigin,
+  getSpotifyRedirectUri,
+  normalizeSpotifyReturnOrigin,
+  parseSpotifyState,
+} from "@/utils/spotify-auth";
 
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
 const SPOTIFY_API = "https://api.spotify.com/v1";
@@ -20,7 +25,7 @@ export const Route = createFileRoute("/api/spotify/callback")({
 
         if (state) {
           try {
-            const parsedState = parseSpotifyState(state);
+            const parsedState = await parseSpotifyState(state);
             returnOrigin = parsedState.returnOrigin;
             userId = parsedState.userId;
           } catch (error) {
@@ -83,7 +88,9 @@ export const Route = createFileRoute("/api/spotify/callback")({
         const meRes = await fetch(`${SPOTIFY_API}/me`, {
           headers: { Authorization: `Bearer ${tok.access_token}` },
         });
-        const me = meRes.ok ? ((await meRes.json()) as { id: string; display_name?: string }) : null;
+        const me = meRes.ok
+          ? ((await meRes.json()) as { id: string; display_name?: string })
+          : null;
 
         const expiresAt = new Date(Date.now() + tok.expires_in * 1000).toISOString();
         const { error } = await supabaseAdmin.from("spotify_connections").upsert(
@@ -96,7 +103,7 @@ export const Route = createFileRoute("/api/spotify/callback")({
             spotify_user_id: me?.id ?? null,
             spotify_display_name: me?.display_name ?? null,
           },
-          { onConflict: "user_id" }
+          { onConflict: "user_id" },
         );
 
         if (error) {
