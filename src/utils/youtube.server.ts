@@ -61,9 +61,36 @@ export async function searchYouTubeOnce(query: string): Promise<string | null> {
   return first.id.videoId ?? null;
 }
 
+/**
+ * Strip trailing "(Remastered 2011)", "- Radio Edit", "(feat. X)" style
+ * suffixes that hurt YouTube search relevance. Returns the original title
+ * untouched when the suffix is the entire string.
+ */
+export function cleanTrackTitle(title: string): string {
+  const cleaned = title
+    .replace(/\s*[-(].*?(remaster|remix|version|feat\.?|ft\.?).*?[)]?$/i, "")
+    .trim();
+  return cleaned || title.trim();
+}
+
 export function buildYouTubeQuery(artist: string, title: string): string {
-  const cleanTitle = title.replace(/\s*[-(].*?(remaster|remix|version|feat\.?|ft\.?).*?[)]?$/i, "").trim();
-  return `${artist} - ${cleanTitle}`;
+  return `${artist} - ${cleanTrackTitle(title)}`;
+}
+
+/**
+ * Ordered fallback queries for resolving a track, most specific first.
+ * Each search.list call costs 100 quota units, so callers should stop at
+ * the first hit.
+ */
+export function buildYouTubeQueryLadder(artist: string, title: string): string[] {
+  const cleanTitle = cleanTrackTitle(title);
+  const ladder = [
+    `${artist} - ${cleanTitle}`,
+    `${artist} ${cleanTitle} audio`,
+    `${artist} ${title}`,
+    cleanTitle,
+  ];
+  return [...new Set(ladder.map((q) => q.trim()).filter(Boolean))];
 }
 
 export interface YouTubeVideoMeta {
@@ -77,17 +104,22 @@ export interface YouTubeVideoMeta {
 /**
  * Parses an ISO 8601 duration (e.g. "PT3M42S") into seconds.
  */
-function parseIsoDuration(iso: string): number | null {
+export function parseIsoDuration(iso: string): number | null {
   const match = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso);
   if (!match) return null;
   const [, h, m, s] = match;
-  return (Number(h ?? 0) * 3600) + (Number(m ?? 0) * 60) + Number(s ?? 0);
+  // Every component is optional in the pattern, so a bare "PT" would
+  // otherwise parse as 0 seconds. Require at least one.
+  if (h === undefined && m === undefined && s === undefined) return null;
+  return Number(h ?? 0) * 3600 + Number(m ?? 0) * 60 + Number(s ?? 0);
 }
 
 /**
  * Fetch full metadata for up to 50 YouTube video IDs in ONE API call (1 quota unit).
  */
-export async function fetchYouTubeVideoMetadata(videoIds: string[]): Promise<Map<string, YouTubeVideoMeta>> {
+export async function fetchYouTubeVideoMetadata(
+  videoIds: string[],
+): Promise<Map<string, YouTubeVideoMeta>> {
   const result = new Map<string, YouTubeVideoMeta>();
   if (videoIds.length === 0) return result;
 
@@ -113,7 +145,11 @@ export async function fetchYouTubeVideoMetadata(videoIds: string[]): Promise<Map
     const json = (await res.json()) as {
       items?: Array<{
         id: string;
-        snippet: { title: string; channelTitle: string; thumbnails?: Record<string, { url: string }> };
+        snippet: {
+          title: string;
+          channelTitle: string;
+          thumbnails?: Record<string, { url: string }>;
+        };
         contentDetails: { duration: string };
       }>;
     };

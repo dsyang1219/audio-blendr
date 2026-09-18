@@ -4,6 +4,7 @@ import {
   findTrackRow,
   searchYouTubeOnce,
   buildYouTubeQuery,
+  buildYouTubeQueryLadder,
   YouTubeQuotaError,
   type DB,
   type TrackTable,
@@ -18,7 +19,14 @@ export const resolveYouTube = createServerFn({ method: "POST" })
     const userId = context.userId;
     const supabase = context.supabase as DB;
 
-    const row = await findTrackRow(supabase, data.table, userId, data.trackId, data.title, data.artist);
+    const row = await findTrackRow(
+      supabase,
+      data.table,
+      userId,
+      data.trackId,
+      data.title,
+      data.artist,
+    );
     if (!row) {
       console.warn("[youtube] Track lookup failed", {
         table: data.table,
@@ -31,13 +39,7 @@ export const resolveYouTube = createServerFn({ method: "POST" })
 
     if (row.youtube_video_id) return { videoId: row.youtube_video_id };
 
-    const cleanTitle = row.title.replace(/\s*[-(].*?(remaster|remix|version|feat\.?|ft\.?).*?[)]?$/i, "").trim();
-    const queries = [
-      `${row.artist} - ${cleanTitle}`,
-      `${row.artist} ${cleanTitle} audio`,
-      `${row.artist} ${row.title}`,
-      cleanTitle,
-    ];
+    const queries = buildYouTubeQueryLadder(row.artist, row.title);
 
     let videoId: string | null = null;
     let quotaHit = false;
