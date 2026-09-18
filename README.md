@@ -11,7 +11,7 @@ Connect Spotify, sync your liked songs and playlists, and stream every track thr
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black)
 
-[Live demo](https://audio-blendr.YOUR-SUBDOMAIN.workers.dev) · [Report a bug](https://github.com/dsyang1219/audio-blendr/issues)
+[Live demo](https://audio-blendr.danielleyang1219.workers.dev) · [Report a bug](https://github.com/dsyang1219/audio-blendr/issues)
 
 </div>
 
