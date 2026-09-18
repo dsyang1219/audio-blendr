@@ -4,6 +4,7 @@ import { Music, Youtube, Library } from "lucide-react";
 
 import owlIcon from "@/assets/owl-icon.png";
 import { Logo } from "@/components/Logo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/")({
@@ -23,11 +24,19 @@ function Landing() {
         </Link>
         <div className="flex gap-2">
           {user ? (
-            <Link to="/library"><Button variant="secondary">Open library</Button></Link>
+            <Link to="/library">
+              <Button variant="secondary">Open library</Button>
+            </Link>
           ) : (
             <>
-              <Link to="/auth"><Button variant="ghost">Sign in</Button></Link>
-              <Link to="/auth"><Button variant="secondary" className="hover:scale-105 transition-all">Get started</Button></Link>
+              <Link to="/auth">
+                <Button variant="ghost">Sign in</Button>
+              </Link>
+              <Link to="/auth">
+                <Button variant="secondary" className="hover:scale-105 transition-all">
+                  Get started
+                </Button>
+              </Link>
             </>
           )}
         </div>
@@ -36,19 +45,32 @@ function Landing() {
       <main className="container mx-auto px-6 py-20">
         <section className="mx-auto max-w-3xl text-center animate-fade-in">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium">
-            <img src={owlIcon} alt="Owl mascot" width={24} height={24} loading="lazy" className="h-6 w-6 object-contain" />
-            Built for Maddy
+            <img
+              src={owlIcon}
+              alt="Owl mascot"
+              width={24}
+              height={24}
+              loading="lazy"
+              className="h-6 w-6 object-contain"
+            />
+            Free · No Spotify Premium required
           </div>
           <h2 className="text-5xl font-bold tracking-tight md:text-7xl">
             Your <span className="text-gradient">Spotify library</span>,
-            <br />playing on YouTube.
+            <br />
+            playing on YouTube.
           </h2>
           <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-            Connect your Spotify account, sync your liked songs and playlists, and stream every track via YouTube — all in one player.
+            Connect your Spotify account, sync your liked songs and playlists, and stream every
+            track via YouTube — all in one player.
           </p>
           <div className="mt-10 flex justify-center gap-3">
             <Link to={ctaTo}>
-              <Button size="lg" variant="secondary" className="text-base hover:scale-105 transition-all">
+              <Button
+                size="lg"
+                variant="secondary"
+                className="text-base hover:scale-105 transition-all"
+              >
                 {user ? "Open your library" : "Get started — it's free"}
               </Button>
             </Link>
@@ -56,16 +78,38 @@ function Landing() {
         </section>
 
         <section className="mx-auto mt-24 grid max-w-4xl gap-6 md:grid-cols-3">
-          <FeatureCard icon={<Music className="h-6 w-6" />} title="Connect Spotify" desc="Link your Spotify account in one click to access your library." />
-          <FeatureCard icon={<Library className="h-6 w-6" />} title="Sync everything" desc="Import liked songs and playlists with just the click of a button." />
-          <FeatureCard icon={<Youtube className="h-6 w-6" />} title="Play via YouTube" desc="Stream every song from YouTube — no Spotify Premium required." />
+          <FeatureCard
+            icon={<Music className="h-6 w-6" />}
+            title="Connect Spotify"
+            desc="Link your Spotify account in one click to access your library."
+          />
+          <FeatureCard
+            icon={<Library className="h-6 w-6" />}
+            title="Sync everything"
+            desc="Import liked songs and playlists with just the click of a button."
+          />
+          <FeatureCard
+            icon={<Youtube className="h-6 w-6" />}
+            title="Play via YouTube"
+            desc="Stream every song from YouTube — no Spotify Premium required."
+          />
         </section>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }
 
-function FeatureCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+function FeatureCard({
+  icon,
+  title,
+  desc,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}) {
   return (
     <div className="hover-lift glass rounded-2xl p-6 animate-scale-in">
       <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">

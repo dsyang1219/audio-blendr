@@ -9,11 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SpotifyCallbackRouteImport } from './routes/spotify.callback'
-import { Route as ApiDebugYoutubeRouteImport } from './routes/api.debug-youtube'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppPlaylistsRouteImport } from './routes/_app/playlists'
 import { Route as AppLibraryRouteImport } from './routes/_app/library'
@@ -21,6 +22,16 @@ import { Route as AppConnectRouteImport } from './routes/_app/connect'
 import { Route as ApiSpotifyCallbackRouteImport } from './routes/api.spotify.callback'
 import { Route as AppPlaylistsIdRouteImport } from './routes/_app/playlists.$id'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -38,11 +49,6 @@ const IndexRoute = IndexRouteImport.update({
 const SpotifyCallbackRoute = SpotifyCallbackRouteImport.update({
   id: '/spotify/callback',
   path: '/spotify/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiDebugYoutubeRoute = ApiDebugYoutubeRouteImport.update({
-  id: '/api/debug-youtube',
-  path: '/api/debug-youtube',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -79,11 +85,12 @@ const AppPlaylistsIdRoute = AppPlaylistsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/connect': typeof AppConnectRoute
   '/library': typeof AppLibraryRoute
   '/playlists': typeof AppPlaylistsRouteWithChildren
   '/settings': typeof AppSettingsRoute
-  '/api/debug-youtube': typeof ApiDebugYoutubeRoute
   '/spotify/callback': typeof SpotifyCallbackRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
   '/api/spotify/callback': typeof ApiSpotifyCallbackRoute
@@ -91,11 +98,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/connect': typeof AppConnectRoute
   '/library': typeof AppLibraryRoute
   '/playlists': typeof AppPlaylistsRouteWithChildren
   '/settings': typeof AppSettingsRoute
-  '/api/debug-youtube': typeof ApiDebugYoutubeRoute
   '/spotify/callback': typeof SpotifyCallbackRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
   '/api/spotify/callback': typeof ApiSpotifyCallbackRoute
@@ -105,11 +113,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/_app/connect': typeof AppConnectRoute
   '/_app/library': typeof AppLibraryRoute
   '/_app/playlists': typeof AppPlaylistsRouteWithChildren
   '/_app/settings': typeof AppSettingsRoute
-  '/api/debug-youtube': typeof ApiDebugYoutubeRoute
   '/spotify/callback': typeof SpotifyCallbackRoute
   '/_app/playlists/$id': typeof AppPlaylistsIdRoute
   '/api/spotify/callback': typeof ApiSpotifyCallbackRoute
@@ -119,11 +128,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/privacy'
+    | '/terms'
     | '/connect'
     | '/library'
     | '/playlists'
     | '/settings'
-    | '/api/debug-youtube'
     | '/spotify/callback'
     | '/playlists/$id'
     | '/api/spotify/callback'
@@ -131,11 +141,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/privacy'
+    | '/terms'
     | '/connect'
     | '/library'
     | '/playlists'
     | '/settings'
-    | '/api/debug-youtube'
     | '/spotify/callback'
     | '/playlists/$id'
     | '/api/spotify/callback'
@@ -144,11 +155,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/auth'
+    | '/privacy'
+    | '/terms'
     | '/_app/connect'
     | '/_app/library'
     | '/_app/playlists'
     | '/_app/settings'
-    | '/api/debug-youtube'
     | '/spotify/callback'
     | '/_app/playlists/$id'
     | '/api/spotify/callback'
@@ -158,13 +170,28 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
-  ApiDebugYoutubeRoute: typeof ApiDebugYoutubeRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   SpotifyCallbackRoute: typeof SpotifyCallbackRoute
   ApiSpotifyCallbackRoute: typeof ApiSpotifyCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -191,13 +218,6 @@ declare module '@tanstack/react-router' {
       path: '/spotify/callback'
       fullPath: '/spotify/callback'
       preLoaderRoute: typeof SpotifyCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/debug-youtube': {
-      id: '/api/debug-youtube'
-      path: '/api/debug-youtube'
-      fullPath: '/api/debug-youtube'
-      preLoaderRoute: typeof ApiDebugYoutubeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/settings': {
@@ -277,10 +297,20 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
-  ApiDebugYoutubeRoute: ApiDebugYoutubeRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   SpotifyCallbackRoute: SpotifyCallbackRoute,
   ApiSpotifyCallbackRoute: ApiSpotifyCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

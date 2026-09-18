@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import YouTube from "react-youtube";
 import type { YouTubePlayer } from "react-youtube";
-import { Play, Pause, SkipBack, SkipForward, Music, Volume2, Shuffle, ChevronDown } from "lucide-react";
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Music,
+  Volume2,
+  Shuffle,
+  ChevronDown,
+} from "lucide-react";
 import { usePlayer } from "@/lib/player-context";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveYouTube } from "@/utils/youtube.functions";
@@ -12,7 +21,18 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export function Player() {
-  const { current, isPlaying, setIsPlaying, playNext, playPrev, shuffle, toggleShuffle, queue, currentIndex, setTrackVideoId } = usePlayer();
+  const {
+    current,
+    isPlaying,
+    setIsPlaying,
+    playNext,
+    playPrev,
+    shuffle,
+    toggleShuffle,
+    queue,
+    currentIndex,
+    setTrackVideoId,
+  } = usePlayer();
   const [videoId, setVideoId] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -40,7 +60,8 @@ export function Player() {
       setResolving(true);
       setVideoId(null);
 
-      const preferredTable = current.sourceTable ?? (current.spotify_track_id ? "liked_tracks" : "playlist_tracks");
+      const preferredTable =
+        current.sourceTable ?? (current.spotify_track_id ? "liked_tracks" : "playlist_tracks");
       const fallbackTable = preferredTable === "liked_tracks" ? "playlist_tracks" : "liked_tracks";
 
       // Run both lookups in parallel — take the first successful videoId.
@@ -63,7 +84,10 @@ export function Player() {
           setVideoId(videoId);
           setTrackVideoId(current.id, videoId);
         } else if (quotaHit) {
-          toast.error("YouTube daily search quota reached — try again after midnight Pacific time", { id: "yt-quota" });
+          toast.error(
+            "YouTube daily search quota reached — try again after midnight Pacific time",
+            { id: "yt-quota" },
+          );
         } else {
           toast.error(`Couldn't find "${current.title}" on YouTube`);
         }
@@ -118,14 +142,18 @@ export function Player() {
     try {
       if (isPlaying) playerRef.current.playVideo();
       else playerRef.current.pauseVideo();
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [isPlaying]);
 
   // Volume changes
   useEffect(() => {
     try {
       playerRef.current?.setVolume?.(volume);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [volume]);
 
   const fmt = (s: number) => {
@@ -147,10 +175,12 @@ export function Player() {
               className="flex min-w-0 items-center gap-3 text-left md:cursor-default md:pointer-events-none disabled:opacity-100"
               aria-label="Open now playing"
             >
-              <div className={cn(
-                "h-11 w-11 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-lg bg-muted shadow-elegant transition-transform",
-                isPlaying && "animate-float"
-              )}>
+              <div
+                className={cn(
+                  "h-11 w-11 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-lg bg-muted shadow-elegant transition-transform",
+                  isPlaying && "animate-float",
+                )}
+              >
                 {current?.album_art_url ? (
                   <img src={current.album_art_url} alt="" className="h-full w-full object-cover" />
                 ) : (
@@ -160,18 +190,29 @@ export function Player() {
                 )}
               </div>
               <div className="min-w-0">
-                <div className="truncate text-xs sm:text-sm font-semibold">{current?.title ?? "Nothing playing"}</div>
-                <div className="truncate text-[11px] sm:text-xs text-muted-foreground">{current?.artist ?? "Pick a song from your library"}</div>
+                <div className="truncate text-xs sm:text-sm font-semibold">
+                  {current?.title ?? "Nothing playing"}
+                </div>
+                <div className="truncate text-[11px] sm:text-xs text-muted-foreground">
+                  {current?.artist ?? "Pick a song from your library"}
+                </div>
                 {current?.album && (
-                  <div className="hidden sm:block truncate text-[11px] text-muted-foreground/70">{current.album}</div>
+                  <div className="hidden sm:block truncate text-[11px] text-muted-foreground/70">
+                    {current.album}
+                  </div>
                 )}
               </div>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="md:hidden h-[100dvh] w-full bg-gradient-to-b from-sidebar via-background to-background border-0 p-0">
+          <SheetContent
+            side="bottom"
+            className="md:hidden h-[100dvh] w-full bg-gradient-to-b from-sidebar via-background to-background border-0 p-0"
+          >
             <div className="flex h-full flex-col px-6 pt-6 pb-10">
               <div className="mb-6 flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Now Playing</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  Now Playing
+                </span>
                 <ChevronDown className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="mx-auto mb-8 aspect-square w-full max-w-sm overflow-hidden rounded-2xl bg-muted shadow-elegant ring-1 ring-white/10">
@@ -184,9 +225,17 @@ export function Player() {
                 )}
               </div>
               <div className="mb-6 min-w-0">
-                <div className="truncate text-2xl font-bold">{current?.title ?? "Nothing playing"}</div>
-                <div className="truncate text-base text-muted-foreground">{current?.artist ?? "Pick a song from your library"}</div>
-                {current?.album && <div className="mt-1 truncate text-sm text-muted-foreground/70">{current.album}</div>}
+                <div className="truncate text-2xl font-bold">
+                  {current?.title ?? "Nothing playing"}
+                </div>
+                <div className="truncate text-base text-muted-foreground">
+                  {current?.artist ?? "Pick a song from your library"}
+                </div>
+                {current?.album && (
+                  <div className="mt-1 truncate text-sm text-muted-foreground/70">
+                    {current.album}
+                  </div>
+                )}
               </div>
               <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="w-9 text-right tabular-nums">{fmt(progress)}</span>
@@ -200,9 +249,16 @@ export function Player() {
                     setProgress(t);
                   }}
                   onValueCommit={(v) => {
-                    if (!playerRef.current || !duration) { setSeeking(false); return; }
+                    if (!playerRef.current || !duration) {
+                      setSeeking(false);
+                      return;
+                    }
                     const t = (v[0] / 100) * duration;
-                    try { playerRef.current.seekTo(t, true); } catch { /* ignore */ }
+                    try {
+                      playerRef.current.seekTo(t, true);
+                    } catch {
+                      /* ignore */
+                    }
                     setProgress(t);
                     seekValueRef.current = null;
                     setTimeout(() => setSeeking(false), 250);
@@ -222,7 +278,11 @@ export function Player() {
                 >
                   <Shuffle className="h-6 w-6" />
                 </button>
-                <button onClick={playPrev} className="text-muted-foreground hover:text-foreground" aria-label="Previous">
+                <button
+                  onClick={playPrev}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Previous"
+                >
                   <SkipBack className="h-8 w-8" />
                 </button>
                 <button
@@ -230,20 +290,34 @@ export function Player() {
                   disabled={!current}
                   className={cn(
                     "flex h-16 w-16 items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-transform active:scale-95 disabled:opacity-40",
-                    isPlaying && "animate-pulse-glow"
+                    isPlaying && "animate-pulse-glow",
                   )}
                   aria-label={isPlaying ? "Pause" : "Play"}
                 >
-                  {isPlaying ? <Pause className="h-7 w-7" /> : <Play className="h-7 w-7 fill-current" />}
+                  {isPlaying ? (
+                    <Pause className="h-7 w-7" />
+                  ) : (
+                    <Play className="h-7 w-7 fill-current" />
+                  )}
                 </button>
-                <button onClick={playNext} className="text-muted-foreground hover:text-foreground" aria-label="Next">
+                <button
+                  onClick={playNext}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Next"
+                >
                   <SkipForward className="h-8 w-8" />
                 </button>
                 <div className="w-6" />
               </div>
               <div className="mt-8 flex items-center gap-3">
                 <Volume2 className="h-4 w-4 text-muted-foreground" />
-                <Slider value={[volume]} onValueChange={(v) => setVolume(v[0])} max={100} step={1} className="flex-1" />
+                <Slider
+                  value={[volume]}
+                  onValueChange={(v) => setVolume(v[0])}
+                  max={100}
+                  step={1}
+                  className="flex-1"
+                />
               </div>
             </div>
           </SheetContent>
@@ -256,7 +330,7 @@ export function Player() {
               onClick={toggleShuffle}
               className={cn(
                 "transition hover:text-foreground",
-                shuffle ? "text-primary" : "text-muted-foreground"
+                shuffle ? "text-primary" : "text-muted-foreground",
               )}
               aria-label="Toggle shuffle"
               aria-pressed={shuffle}
@@ -264,7 +338,11 @@ export function Player() {
             >
               <Shuffle className="h-4 w-4" />
             </button>
-            <button onClick={playPrev} className="text-muted-foreground hover:text-foreground" aria-label="Previous">
+            <button
+              onClick={playPrev}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Previous"
+            >
               <SkipBack className="h-5 w-5" />
             </button>
             <button
@@ -272,13 +350,21 @@ export function Player() {
               disabled={!current}
               className={cn(
                 "hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-all hover:scale-110 active:scale-95 disabled:opacity-40 disabled:hover:scale-100",
-                isPlaying && "animate-pulse-glow"
+                isPlaying && "animate-pulse-glow",
               )}
               aria-label={isPlaying ? "Pause" : "Play"}
             >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
+              {isPlaying ? (
+                <Pause className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4 fill-current" />
+              )}
             </button>
-            <button onClick={playNext} className="text-muted-foreground hover:text-foreground" aria-label="Next">
+            <button
+              onClick={playNext}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Next"
+            >
               <SkipForward className="h-5 w-5" />
             </button>
           </div>
@@ -301,7 +387,9 @@ export function Player() {
                 const t = (v[0] / 100) * duration;
                 try {
                   playerRef.current.seekTo(t, true);
-                } catch { /* ignore */ }
+                } catch {
+                  /* ignore */
+                }
                 setProgress(t);
                 seekValueRef.current = null;
                 // Allow polling to resume after the player updates internally
@@ -330,7 +418,13 @@ export function Player() {
             <PopoverContent side="top" align="end" className="w-44 p-3">
               <div className="flex items-center gap-2">
                 <Volume2 className="h-4 w-4 text-muted-foreground" />
-                <Slider value={[volume]} onValueChange={(v) => setVolume(v[0])} max={100} step={1} className="flex-1" />
+                <Slider
+                  value={[volume]}
+                  onValueChange={(v) => setVolume(v[0])}
+                  max={100}
+                  step={1}
+                  className="flex-1"
+                />
               </div>
             </PopoverContent>
           </Popover>
@@ -340,7 +434,7 @@ export function Player() {
             disabled={!current}
             className={cn(
               "md:hidden flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-all active:scale-95 disabled:opacity-40",
-              isPlaying && "animate-pulse-glow"
+              isPlaying && "animate-pulse-glow",
             )}
             aria-label={isPlaying ? "Pause" : "Play"}
           >
@@ -364,12 +458,22 @@ export function Player() {
           <YouTube
             videoId={videoId}
             opts={{
+              // Privacy-enhanced mode: YouTube does not store viewer info unless the video plays.
+              host: "https://www.youtube-nocookie.com",
               playerVars: { autoplay: 1, controls: 0, modestbranding: 1, playsinline: 1 },
             }}
             onReady={(e) => {
               playerRef.current = e.target;
-              try { e.target.setVolume(volume); } catch { /* ignore */ }
-              try { e.target.playVideo(); } catch { /* ignore */ }
+              try {
+                e.target.setVolume(volume);
+              } catch {
+                /* ignore */
+              }
+              try {
+                e.target.playVideo();
+              } catch {
+                /* ignore */
+              }
               setIsPlaying(true);
             }}
             onStateChange={(e) => {
@@ -377,7 +481,11 @@ export function Player() {
               const state = (e as unknown as { data: number }).data;
               if (state === 5 || state === -1) {
                 // Cued or unstarted after a video swap — kick playback
-                try { e.target.playVideo(); } catch { /* ignore */ }
+                try {
+                  e.target.playVideo();
+                } catch {
+                  /* ignore */
+                }
               }
             }}
             onPlay={() => setIsPlaying(true)}
@@ -403,7 +511,9 @@ export function Player() {
       </div>
 
       {resolving && (
-        <p className="mt-1 text-center text-xs text-muted-foreground">Finding "{current?.title}" on YouTube…</p>
+        <p className="mt-1 text-center text-xs text-muted-foreground">
+          Finding "{current?.title}" on YouTube…
+        </p>
       )}
     </footer>
   );

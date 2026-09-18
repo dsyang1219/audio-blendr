@@ -1,4 +1,11 @@
-import { createFileRoute, Outlet, redirect, Link, useNavigate, useLocation } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  Link,
+  useNavigate,
+  useLocation,
+} from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +24,9 @@ function AppLayout() {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [playlists, setPlaylists] = useState<{ id: string; name: string; cover_url: string | null }[]>([]);
+  const [playlists, setPlaylists] = useState<
+    { id: string; name: string; cover_url: string | null }[]
+  >([]);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -34,7 +43,11 @@ function AppLayout() {
   }, [user, location.pathname]);
 
   if (loading || !user) {
-    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
   }
 
   const sidebarContent = (
@@ -44,18 +57,30 @@ function AppLayout() {
       </Link>
 
       <nav className="space-y-1.5">
-        <NavItem to="/library" icon={<Heart className="h-4 w-4" />}>Liked Songs</NavItem>
-        <NavItem to="/playlists" icon={<Library className="h-4 w-4" />}>Playlists</NavItem>
-        <NavItem to="/connect" icon={<Plug className="h-4 w-4" />}>Spotify and Youtube Sync</NavItem>
-        <NavItem to="/settings" icon={<Settings className="h-4 w-4" />}>Settings</NavItem>
+        <NavItem to="/library" icon={<Heart className="h-4 w-4" />}>
+          Liked Songs
+        </NavItem>
+        <NavItem to="/playlists" icon={<Library className="h-4 w-4" />}>
+          Playlists
+        </NavItem>
+        <NavItem to="/connect" icon={<Plug className="h-4 w-4" />}>
+          Spotify and Youtube Sync
+        </NavItem>
+        <NavItem to="/settings" icon={<Settings className="h-4 w-4" />}>
+          Settings
+        </NavItem>
       </nav>
 
       <div className="mt-6 flex-1 min-h-0 border-t border-sidebar-border pt-4">
-        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Your Playlists</p>
+        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+          Your Playlists
+        </p>
         <ScrollArea className="h-full max-h-[40vh] md:max-h-[calc(100vh-26rem)]">
           <div className="space-y-0.5 pr-2">
             {playlists.length === 0 && (
-              <p className="px-3 text-xs text-muted-foreground">Sync from Spotify to see your playlists here.</p>
+              <p className="px-3 text-xs text-muted-foreground">
+                Sync from Spotify to see your playlists here.
+              </p>
             )}
             {playlists.map((p) => (
               <Link
@@ -88,9 +113,22 @@ function AppLayout() {
           </div>
           <span className="truncate text-xs text-muted-foreground">{user.email}</span>
         </div>
-        <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => signOut()}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start"
+          onClick={() => signOut()}
+        >
           <LogOut className="mr-2 h-4 w-4" /> Sign out
         </Button>
+        <nav aria-label="Legal" className="mt-2 flex gap-3 px-3 text-[11px] text-muted-foreground">
+          <Link to="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link to="/terms" className="hover:text-foreground">
+            Terms
+          </Link>
+        </nav>
       </div>
     </>
   );
@@ -130,7 +168,15 @@ function AppLayout() {
   );
 }
 
-function NavItem({ to, icon, children }: { to: string; icon: React.ReactNode; children: React.ReactNode }) {
+function NavItem({
+  to,
+  icon,
+  children,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       to={to}

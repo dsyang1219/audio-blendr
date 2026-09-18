@@ -76,12 +76,37 @@
   --sidebar-border: oklch(0.24 0.012 255);
   --sidebar-ring: oklch(0.68 0.18 250);
 
-  --gradient-primary: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.55 0.22 305) 65%, oklch(0.55 0.22 305) 100%);
-  --gradient-violet: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.55 0.22 305) 65%, oklch(0.55 0.22 305) 100%);
-  --gradient-cyan: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.55 0.22 305) 65%, oklch(0.55 0.22 305) 100%);
-  --gradient-sunset: linear-gradient(135deg, oklch(0.76 0.16 245) 0%, oklch(0.76 0.16 245) 35%, oklch(0.55 0.22 305) 65%, oklch(0.55 0.22 305) 100%);
-  --gradient-mesh: radial-gradient(at 15% 0%, oklch(0.68 0.18 250 / 0.12) 0px, transparent 55%),
-                   radial-gradient(at 85% 90%, oklch(0.55 0.22 305 / 0.1) 0px, transparent 55%);
+  --gradient-primary: linear-gradient(
+    135deg,
+    oklch(0.76 0.16 245) 0%,
+    oklch(0.76 0.16 245) 35%,
+    oklch(0.55 0.22 305) 65%,
+    oklch(0.55 0.22 305) 100%
+  );
+  --gradient-violet: linear-gradient(
+    135deg,
+    oklch(0.76 0.16 245) 0%,
+    oklch(0.76 0.16 245) 35%,
+    oklch(0.55 0.22 305) 65%,
+    oklch(0.55 0.22 305) 100%
+  );
+  --gradient-cyan: linear-gradient(
+    135deg,
+    oklch(0.76 0.16 245) 0%,
+    oklch(0.76 0.16 245) 35%,
+    oklch(0.55 0.22 305) 65%,
+    oklch(0.55 0.22 305) 100%
+  );
+  --gradient-sunset: linear-gradient(
+    135deg,
+    oklch(0.76 0.16 245) 0%,
+    oklch(0.76 0.16 245) 35%,
+    oklch(0.55 0.22 305) 65%,
+    oklch(0.55 0.22 305) 100%
+  );
+  --gradient-mesh:
+    radial-gradient(at 15% 0%, oklch(0.68 0.18 250 / 0.12) 0px, transparent 55%),
+    radial-gradient(at 85% 90%, oklch(0.55 0.22 305 / 0.1) 0px, transparent 55%);
   --shadow-glow: 0 8px 30px -12px oklch(0.68 0.18 250 / 0.45);
   --shadow-pink: 0 8px 30px -12px oklch(0.55 0.22 305 / 0.45);
   --shadow-elegant: 0 20px 50px -20px oklch(0.05 0 0 / 0.6);
@@ -124,7 +149,14 @@
 
   html {
     color-scheme: dark;
-    font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family:
+      "Inter",
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
     font-feature-settings: "cv11", "ss01", "ss03";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -139,12 +171,21 @@
     letter-spacing: -0.005em;
   }
 
-  h1, h2, h3, h4, h5, h6, .font-display {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-display {
     font-family: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
     letter-spacing: -0.02em;
   }
 
-  .font-mono, code, kbd, samp {
+  .font-mono,
+  code,
+  kbd,
+  samp {
     font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   }
 }
@@ -156,51 +197,113 @@
 
 /* ----- Animation utilities ----- */
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes scale-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 oklch(0.72 0.2 250 / 0.5); }
-  50%      { box-shadow: 0 0 0 12px oklch(0.72 0.2 250 / 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.72 0.2 250 / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 12px oklch(0.72 0.2 250 / 0);
+  }
 }
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50%      { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
-.animate-fade-in   { animation: fade-in 0.4s ease-out both; }
-.animate-scale-in  { animation: scale-in 0.3s ease-out both; }
-.animate-float     { animation: float 4s ease-in-out infinite; }
-.animate-pulse-glow{ animation: pulse-glow 2s ease-in-out infinite; }
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out both;
+}
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out both;
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
 
-.bg-gradient-primary { background-image: var(--gradient-primary); }
-.bg-gradient-violet  { background-image: var(--gradient-violet); }
-.bg-gradient-cyan    { background-image: var(--gradient-cyan); }
-.bg-gradient-sunset  { background-image: var(--gradient-sunset); }
+.bg-gradient-primary {
+  background-image: var(--gradient-primary);
+}
+.bg-gradient-violet {
+  background-image: var(--gradient-violet);
+}
+.bg-gradient-cyan {
+  background-image: var(--gradient-cyan);
+}
+.bg-gradient-sunset {
+  background-image: var(--gradient-sunset);
+}
 .bg-gradient-animated {
-  background: linear-gradient(120deg, oklch(0.76 0.16 245), oklch(0.22 0.005 0), oklch(0.55 0.22 305), oklch(0.22 0.005 0), oklch(0.76 0.16 245));
+  background: linear-gradient(
+    120deg,
+    oklch(0.76 0.16 245),
+    oklch(0.22 0.005 0),
+    oklch(0.55 0.22 305),
+    oklch(0.22 0.005 0),
+    oklch(0.76 0.16 245)
+  );
   background-size: 300% 300%;
   animation: gradient-shift 8s ease infinite;
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, oklch(0.8 0.16 245) 0%, oklch(0.8 0.16 245) 35%, oklch(0.6 0.22 305) 65%, oklch(0.6 0.22 305) 100%);
+  background: linear-gradient(
+    135deg,
+    oklch(0.8 0.16 245) 0%,
+    oklch(0.8 0.16 245) 35%,
+    oklch(0.6 0.22 305) 65%,
+    oklch(0.6 0.22 305) 100%
+  );
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
 }
 
-.shadow-glow    { box-shadow: var(--shadow-glow); }
-.shadow-pink    { box-shadow: var(--shadow-pink); }
-.shadow-elegant { box-shadow: var(--shadow-elegant); }
+.shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+.shadow-pink {
+  box-shadow: var(--shadow-pink);
+}
+.shadow-elegant {
+  box-shadow: var(--shadow-elegant);
+}
 
 .glass {
   background-color: oklch(0.22 0.02 255 / 0.6);
@@ -210,9 +313,52 @@
 }
 
 .hover-lift {
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
 }
 .hover-lift:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-elegant);
+}
+
+/* Long-form legal documents (see components/LegalPage.tsx) */
+.legal-prose {
+  color: var(--muted-foreground);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+.legal-prose h2 {
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.legal-prose p + p,
+.legal-prose ul + p,
+.legal-prose p + ul {
+  margin-top: 0.75rem;
+}
+.legal-prose ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.legal-prose li + li {
+  margin-top: 0.375rem;
+}
+.legal-prose strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+.legal-prose a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.legal-prose code {
+  font-size: 0.85em;
+  background: var(--muted);
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
 }
