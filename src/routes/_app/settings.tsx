@@ -6,7 +6,15 @@ import { getSpotifyStatus, disconnectSpotify } from "@/utils/spotify.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Settings as SettingsIcon, LogOut, User, Plug, Unplug, Loader2, ShieldAlert } from "lucide-react";
+import {
+  Settings as SettingsIcon,
+  LogOut,
+  User,
+  Plug,
+  Unplug,
+  Loader2,
+  ShieldAlert,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/settings")({
@@ -19,7 +27,9 @@ function SettingsPage() {
   const getStatusFn = useServerFn(getSpotifyStatus);
   const disconnectFn = useServerFn(disconnectSpotify);
 
-  const [status, setStatus] = useState<{ connected: boolean; displayName: string | null } | null>(null);
+  const [status, setStatus] = useState<{ connected: boolean; displayName: string | null } | null>(
+    null,
+  );
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
@@ -63,10 +73,10 @@ function SettingsPage() {
           <SettingsIcon className="h-5 w-5 text-secondary-foreground" />
         </div>
         <div>
-          <h1 className="font-display text-4xl font-bold tracking-tight">
-            Settings
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Manage your account and connected services.</p>
+          <h1 className="font-display text-4xl font-bold tracking-tight">Settings</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage your account and connected services.
+          </p>
         </div>
       </div>
 
@@ -88,7 +98,9 @@ function SettingsPage() {
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{user?.email ?? "—"}</p>
-              <p className="font-mono text-[11px] text-muted-foreground">ID: {user?.id?.slice(0, 8) ?? "—"}…</p>
+              <p className="font-mono text-[11px] text-muted-foreground">
+                ID: {user?.id?.slice(0, 8) ?? "—"}…
+              </p>
             </div>
           </div>
           <Separator />
@@ -129,7 +141,12 @@ function SettingsPage() {
               </p>
             </div>
             {status?.connected ? (
-              <Button variant="ghost" size="sm" onClick={handleDisconnect} disabled={busy === "disconnect"}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDisconnect}
+                disabled={busy === "disconnect"}
+              >
                 {busy === "disconnect" ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (

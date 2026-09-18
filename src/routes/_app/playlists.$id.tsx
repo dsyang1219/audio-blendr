@@ -8,7 +8,13 @@ import type { Track } from "@/lib/player-context";
 import { usePlayer } from "@/lib/player-context";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,7 +71,11 @@ function PlaylistDetail() {
   const load = useCallback(() => {
     setLoading(true);
     Promise.all([
-      supabase.from("playlists").select("name, description, cover_url, source, user_id, spotify_playlist_id").eq("id", id).maybeSingle(),
+      supabase
+        .from("playlists")
+        .select("name, description, cover_url, source, user_id, spotify_playlist_id")
+        .eq("id", id)
+        .maybeSingle(),
       supabase.from("playlist_tracks").select("*").eq("playlist_id", id).order("position"),
     ]).then(([pl, tr]) => {
       setPlaylist(pl.data as PlaylistMeta | null);
@@ -103,7 +113,10 @@ function PlaylistDetail() {
   };
 
   const deletePlaylist = async () => {
-    const { error: tracksError } = await supabase.from("playlist_tracks").delete().eq("playlist_id", id);
+    const { error: tracksError } = await supabase
+      .from("playlist_tracks")
+      .delete()
+      .eq("playlist_id", id);
     if (tracksError) {
       toast.error(tracksError.message);
       return;
@@ -207,7 +220,11 @@ function PlaylistDetail() {
         <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-end">
           <div className="h-40 w-40 md:h-52 md:w-52 flex-shrink-0 overflow-hidden rounded-2xl bg-muted shadow-elegant ring-1 ring-white/10">
             {playlist.cover_url ? (
-              <img src={playlist.cover_url} alt={playlist.name} className="h-full w-full object-cover" />
+              <img
+                src={playlist.cover_url}
+                alt={playlist.name}
+                className="h-full w-full object-cover"
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-background/30">
                 <Music className="h-16 w-16 md:h-20 md:w-20 text-primary-foreground/80" />
@@ -216,10 +233,20 @@ function PlaylistDetail() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/90">
-              {isCustom ? "Custom Playlist" : playlist.source === "youtube" ? "YouTube Playlist" : "Spotify Playlist"}
+              {isCustom
+                ? "Custom Playlist"
+                : playlist.source === "youtube"
+                  ? "YouTube Playlist"
+                  : "Spotify Playlist"}
             </p>
-            <h1 className="mt-2 text-4xl md:text-6xl font-bold tracking-tight break-words">{playlist.name}</h1>
-            {playlist.description && <p className="mt-3 max-w-2xl text-sm md:text-base text-primary-foreground/90">{playlist.description}</p>}
+            <h1 className="mt-2 text-4xl md:text-6xl font-bold tracking-tight break-words">
+              {playlist.name}
+            </h1>
+            {playlist.description && (
+              <p className="mt-3 max-w-2xl text-sm md:text-base text-primary-foreground/90">
+                {playlist.description}
+              </p>
+            )}
             <p className="mt-4 text-sm font-medium text-primary-foreground/90">
               {tracks.length} {tracks.length === 1 ? "song" : "songs"}
             </p>
@@ -228,140 +255,183 @@ function PlaylistDetail() {
       </div>
 
       <div className="px-4 pb-8 pt-2 md:px-8">
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        <Button onClick={handlePlayAll} disabled={tracks.length === 0} size="lg" className="gap-2 shadow-glow hover:scale-105 transition-all">
-          <Play className="h-5 w-5 fill-current" /> Play
-        </Button>
-        <Button
-          onClick={handleShuffle}
-          disabled={tracks.length === 0}
-          size="lg"
-          variant="ghost"
-          aria-pressed={shuffle}
-          className={cn(
-            "gap-2 transition-colors",
-            shuffle ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <Button
+            onClick={handlePlayAll}
+            disabled={tracks.length === 0}
+            size="lg"
+            className="gap-2 shadow-glow hover:scale-105 transition-all"
+          >
+            <Play className="h-5 w-5 fill-current" /> Play
+          </Button>
+          <Button
+            onClick={handleShuffle}
+            disabled={tracks.length === 0}
+            size="lg"
+            variant="ghost"
+            aria-pressed={shuffle}
+            className={cn(
+              "gap-2 transition-colors",
+              shuffle
+                ? "text-primary hover:text-primary"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            title={shuffle ? "Shuffle on" : "Shuffle off"}
+          >
+            <Shuffle className="h-5 w-5" /> Shuffle
+          </Button>
+          <AddSongDialog playlistId={id} onAdded={load} />
+          {isSpotifyLinked && (
+            <Button
+              onClick={handleSyncFromSpotify}
+              disabled={syncing}
+              size="lg"
+              variant="outline"
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+              {tracks.length === 0 ? "Sync from Spotify" : "Re-sync from Spotify"}
+            </Button>
           )}
-          title={shuffle ? "Shuffle on" : "Shuffle off"}
-        >
-          <Shuffle className="h-5 w-5" /> Shuffle
-        </Button>
-        <AddSongDialog playlistId={id} onAdded={load} />
-        {isSpotifyLinked && (
-          <Button onClick={handleSyncFromSpotify} disabled={syncing} size="lg" variant="outline" className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-            {tracks.length === 0 ? "Sync from Spotify" : "Re-sync from Spotify"}
-          </Button>
-        )}
-        {isEditable && (
-          <Button onClick={openEdit} variant="outline" size="lg" className="gap-2">
-            <Pencil className="h-4 w-4" /> Edit
-          </Button>
-        )}
-        {isEditable && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="lg" className="gap-2">
-                <Trash2 className="h-4 w-4" /> Delete
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete this playlist?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently remove "{playlist.name}" and all of its tracks. This cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={deletePlaylist}>Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-      </div>
-
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit playlist</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Cover image</Label>
-              <div className="flex items-center gap-3">
-                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded bg-muted">
-                  {editCoverPreview ? (
-                    <>
-                      <img src={editCoverPreview} alt="Cover preview" className="h-full w-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => onPickEditCover(null)}
-                        className="absolute right-0.5 top-0.5 rounded-full bg-background/80 p-0.5 text-foreground hover:bg-background"
-                        aria-label="Remove new cover"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </>
-                  ) : !removeExistingCover && playlist.cover_url ? (
-                    <img src={playlist.cover_url} alt={playlist.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <Music className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => editFileRef.current?.click()}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  {editCoverPreview || playlist.cover_url ? "Change" : "Upload"}
+          {isEditable && (
+            <Button onClick={openEdit} variant="outline" size="lg" className="gap-2">
+              <Pencil className="h-4 w-4" /> Edit
+            </Button>
+          )}
+          {isEditable && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="lg" className="gap-2">
+                  <Trash2 className="h-4 w-4" /> Delete
                 </Button>
-                {!editCoverPreview && playlist.cover_url && !removeExistingCover && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setRemoveExistingCover(true)}>
-                    Remove
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this playlist?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently remove "{playlist.name}" and all of its tracks. This
+                    cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={deletePlaylist}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit playlist</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Cover image</Label>
+                <div className="flex items-center gap-3">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded bg-muted">
+                    {editCoverPreview ? (
+                      <>
+                        <img
+                          src={editCoverPreview}
+                          alt="Cover preview"
+                          className="h-full w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => onPickEditCover(null)}
+                          className="absolute right-0.5 top-0.5 rounded-full bg-background/80 p-0.5 text-foreground hover:bg-background"
+                          aria-label="Remove new cover"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </>
+                    ) : !removeExistingCover && playlist.cover_url ? (
+                      <img
+                        src={playlist.cover_url}
+                        alt={playlist.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Music className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => editFileRef.current?.click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {editCoverPreview || playlist.cover_url ? "Change" : "Upload"}
                   </Button>
-                )}
-                <input
-                  ref={editFileRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => onPickEditCover(e.target.files?.[0] ?? null)}
+                  {!editCoverPreview && playlist.cover_url && !removeExistingCover && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setRemoveExistingCover(true)}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                  <input
+                    ref={editFileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => onPickEditCover(e.target.files?.[0] ?? null)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-pl-name">Name</Label>
+                <Input
+                  id="edit-pl-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-pl-desc">Description</Label>
+                <Textarea
+                  id="edit-pl-desc"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={3}
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-pl-name">Name</Label>
-              <Input id="edit-pl-name" value={editName} onChange={(e) => setEditName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-pl-desc">Description</Label>
-              <Textarea id="edit-pl-desc" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button onClick={saveEdit} disabled={saving || !editName.trim()}>
-              {saving ? "Saving…" : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={saveEdit} disabled={saving || !editName.trim()}>
+                {saving ? "Saving…" : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      {tracks.length === 0 ? (
-        <p className="text-muted-foreground">
-          {isSpotifyLinked
-            ? 'No tracks yet. Click "Sync from Spotify" above to import this playlist\'s tracks.'
-            : 'No tracks yet. Click "Add song" above to add from Spotify or YouTube.'}
-        </p>
-      ) : (
-        <TrackList
-          tracks={tracks}
-          table="playlist_tracks"
-          playlistId={id}
-          isCustomPlaylist={isEditable}
-          onTrackRemoved={load}
-        />
-      )}
+        {tracks.length === 0 ? (
+          <p className="text-muted-foreground">
+            {isSpotifyLinked
+              ? 'No tracks yet. Click "Sync from Spotify" above to import this playlist\'s tracks.'
+              : 'No tracks yet. Click "Add song" above to add from Spotify or YouTube.'}
+          </p>
+        ) : (
+          <TrackList
+            tracks={tracks}
+            table="playlist_tracks"
+            playlistId={id}
+            isCustomPlaylist={isEditable}
+            onTrackRemoved={load}
+          />
+        )}
       </div>
     </div>
   );

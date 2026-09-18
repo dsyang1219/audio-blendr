@@ -55,7 +55,9 @@ function LibraryPage() {
             <Heart className="h-20 w-20 md:h-24 md:w-24 fill-primary-foreground text-primary-foreground drop-shadow-lg" />
           </div>
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/90">Playlist</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/90">
+              Playlist
+            </p>
             <h1 className="mt-2 text-4xl md:text-6xl font-bold tracking-tight">Liked Songs</h1>
             <p className="mt-4 text-sm font-medium text-primary-foreground/90">
               {tracks.length} {tracks.length === 1 ? "song" : "songs"}
@@ -66,7 +68,12 @@ function LibraryPage() {
 
       <div className="px-4 pb-8 pt-2 md:px-8">
         <div className="mb-6 flex flex-wrap items-center gap-3">
-          <Button onClick={handlePlay} disabled={tracks.length === 0} size="lg" className="gap-2 shadow-glow hover:scale-105 transition-all">
+          <Button
+            onClick={handlePlay}
+            disabled={tracks.length === 0}
+            size="lg"
+            className="gap-2 shadow-glow hover:scale-105 transition-all"
+          >
             <Play className="h-5 w-5 fill-current" /> Play
           </Button>
           <Button
@@ -77,7 +84,9 @@ function LibraryPage() {
             aria-pressed={shuffle}
             className={cn(
               "gap-2 transition-colors",
-              shuffle ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"
+              shuffle
+                ? "text-primary hover:text-primary"
+                : "text-muted-foreground hover:text-foreground",
             )}
             title={shuffle ? "Shuffle on" : "Shuffle off"}
           >
@@ -94,7 +103,9 @@ function LibraryPage() {
               <Heart className="h-8 w-8 fill-primary-foreground text-primary-foreground" />
             </div>
             <p className="text-lg font-semibold">No liked songs yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">Connect Spotify and sync your library, or click "Add song" above.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Connect Spotify and sync your library, or click "Add song" above.
+            </p>
           </div>
         ) : (
           <TrackList tracks={queueTracks} table="liked_tracks" onTrackRemoved={load} />

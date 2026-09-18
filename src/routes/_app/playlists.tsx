@@ -3,7 +3,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Music, Plus, Upload, X, Play, Search, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -142,8 +149,7 @@ function PlaylistsIndex() {
     if (!q) return playlists;
     return playlists.filter(
       (p) =>
-        p.name.toLowerCase().includes(q) ||
-        (p.description?.toLowerCase().includes(q) ?? false),
+        p.name.toLowerCase().includes(q) || (p.description?.toLowerCase().includes(q) ?? false),
     );
   }, [playlists, search]);
 
@@ -192,11 +198,16 @@ function PlaylistsIndex() {
       <div className="mb-6 md:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Your Playlists</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Curate, remix, and rediscover your music.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Curate, remix, and rediscover your music.
+          </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button variant="secondary" className="self-start sm:self-auto hover:scale-105 transition-all">
+            <Button
+              variant="secondary"
+              className="self-start sm:self-auto hover:scale-105 transition-all"
+            >
               <Plus className="mr-2 h-4 w-4" /> New Playlist
             </Button>
           </DialogTrigger>
@@ -211,7 +222,11 @@ function PlaylistsIndex() {
                   <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded bg-muted">
                     {coverPreview ? (
                       <>
-                        <img src={coverPreview} alt="Cover preview" className="h-full w-full object-cover" />
+                        <img
+                          src={coverPreview}
+                          alt="Cover preview"
+                          className="h-full w-full object-cover"
+                        />
                         <button
                           type="button"
                           onClick={() => onPickCover(null)}
@@ -227,7 +242,12 @@ function PlaylistsIndex() {
                       </div>
                     )}
                   </div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
                     <Upload className="mr-2 h-4 w-4" />
                     {coverPreview ? "Change" : "Upload"}
                   </Button>
@@ -242,15 +262,27 @@ function PlaylistsIndex() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pl-name">Name</Label>
-                <Input id="pl-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="My awesome mix" />
+                <Input
+                  id="pl-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="My awesome mix"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pl-desc">Description (optional)</Label>
-                <Textarea id="pl-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+                <Textarea
+                  id="pl-desc"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
               <Button onClick={create} disabled={busy || !name.trim()}>
                 {busy ? "Creating…" : "Create"}
               </Button>
@@ -278,7 +310,9 @@ function PlaylistsIndex() {
             <Music className="h-8 w-8 text-secondary-foreground" />
           </div>
           <p className="text-lg font-semibold">No playlists yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">Create one above or sync from Spotify to get started.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Create one above or sync from Spotify to get started.
+          </p>
         </div>
       ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">No playlists match "{search}".</p>
@@ -306,7 +340,7 @@ function SortablePlaylistCard({ playlist }: { playlist: PL }) {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 10 : "auto" as const,
+    zIndex: isDragging ? 10 : ("auto" as const),
   };
 
   return (
@@ -347,7 +381,11 @@ function SortablePlaylistCard({ playlist }: { playlist: PL }) {
         </div>
         <h3 className="truncate font-semibold">{playlist.name}</h3>
         <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
-          {playlist.source === "custom" ? "Custom" : playlist.source === "spotify" ? "Spotify" : playlist.source}
+          {playlist.source === "custom"
+            ? "Custom"
+            : playlist.source === "spotify"
+              ? "Spotify"
+              : playlist.source}
         </p>
         {playlist.description && (
           <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{playlist.description}</p>

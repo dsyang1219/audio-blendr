@@ -89,7 +89,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   };
 
   const setTrackVideoId = (trackId: string, videoId: string) => {
-    setQueue((q) => q.map((t) => (t.id === trackId && !t.youtube_video_id ? { ...t, youtube_video_id: videoId } : t)));
+    setQueue((q) =>
+      q.map((t) =>
+        t.id === trackId && !t.youtube_video_id ? { ...t, youtube_video_id: videoId } : t,
+      ),
+    );
   };
 
   return (

@@ -39,7 +39,13 @@ function fmt(seconds?: number | null) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrackRemoved }: TrackListProps) {
+export function TrackList({
+  tracks,
+  table,
+  playlistId,
+  isCustomPlaylist,
+  onTrackRemoved,
+}: TrackListProps) {
   const { playQueue, current, shuffle } = usePlayer();
   const { user } = useAuth();
   const [hover, setHover] = useState<string | null>(null);
@@ -123,13 +129,16 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
               onDoubleClick={() => playQueue(queueTracks, i, { shuffle })}
               className={cn(
                 "group grid cursor-pointer grid-cols-[2rem_1fr_3rem_2rem] md:grid-cols-[3rem_1fr_1fr_4rem_2.5rem] items-center gap-3 md:gap-4 border-b border-border/30 px-3 md:px-4 py-2.5 text-sm transition-colors last:border-b-0 hover:bg-accent/40",
-                isCurrent && "bg-primary/10 text-primary"
+                isCurrent && "bg-primary/10 text-primary",
               )}
             >
               <span className="flex justify-center text-muted-foreground">
                 {hover === t.id ? (
                   <button
-                    onClick={(e) => { e.stopPropagation(); playQueue(queueTracks, i, { shuffle }); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playQueue(queueTracks, i, { shuffle });
+                    }}
                     className="text-foreground hover:text-primary"
                     aria-label="Play"
                   >
@@ -153,13 +162,19 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium break-words line-clamp-2 md:truncate md:line-clamp-none">{t.title}</span>
-                    <span className="hidden md:inline-flex"><SourceBadge track={t} /></span>
+                    <span className="font-medium break-words line-clamp-2 md:truncate md:line-clamp-none">
+                      {t.title}
+                    </span>
+                    <span className="hidden md:inline-flex">
+                      <SourceBadge track={t} />
+                    </span>
                   </div>
                   <div className="truncate text-xs text-muted-foreground">{t.artist}</div>
                 </div>
               </div>
-              <span className="hidden truncate text-muted-foreground md:block">{t.album ?? "—"}</span>
+              <span className="hidden truncate text-muted-foreground md:block">
+                {t.album ?? "—"}
+              </span>
               <span className="text-right text-muted-foreground">{fmt(t.duration_seconds)}</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -193,7 +208,10 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
                   {table === "liked_tracks" && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => removeFromLiked(t.id)} className="text-destructive">
+                      <DropdownMenuItem
+                        onClick={() => removeFromLiked(t.id)}
+                        className="text-destructive"
+                      >
                         <Trash2 className="mr-2 h-4 w-4" /> Remove from liked
                       </DropdownMenuItem>
                     </>
@@ -201,7 +219,10 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
                   {table === "playlist_tracks" && playlistId && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => removeFromPlaylist(t.id)} className="text-destructive">
+                      <DropdownMenuItem
+                        onClick={() => removeFromPlaylist(t.id)}
+                        className="text-destructive"
+                      >
                         <Trash2 className="mr-2 h-4 w-4" /> Remove from playlist
                       </DropdownMenuItem>
                     </>
@@ -217,7 +238,9 @@ export function TrackList({ tracks, table, playlistId, isCustomPlaylist, onTrack
 }
 
 function SourceBadge({ track }: { track: Track & { source?: string } }) {
-  const source = (track as Track & { source?: string }).source ?? (track.spotify_track_id ? "spotify" : "youtube");
+  const source =
+    (track as Track & { source?: string }).source ??
+    (track.spotify_track_id ? "spotify" : "youtube");
   if (source === "youtube") {
     return (
       <span className="inline-flex items-center gap-1 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">
