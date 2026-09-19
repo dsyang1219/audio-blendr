@@ -19,7 +19,7 @@ function AuthPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/library" });
+    if (!loading && user) navigate({ to: "/home" });
   }, [user, loading, navigate]);
 
   return (
@@ -83,7 +83,7 @@ function SignInForm() {
       }
 
       toast.success("Welcome back!");
-      navigate({ to: "/library" });
+      navigate({ to: "/home" });
     } finally {
       setBusy(false);
     }
@@ -131,7 +131,7 @@ function SignUpForm() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/library`,
+        emailRedirectTo: `${window.location.origin}/home`,
         data: { display_name: name },
       },
     });

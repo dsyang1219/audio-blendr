@@ -18,6 +18,7 @@ import { Route as SpotifyCallbackRouteImport } from './routes/spotify.callback'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppPlaylistsRouteImport } from './routes/_app/playlists'
 import { Route as AppLibraryRouteImport } from './routes/_app/library'
+import { Route as AppHomeRouteImport } from './routes/_app/home'
 import { Route as AppConnectRouteImport } from './routes/_app/connect'
 import { Route as ApiSpotifyCallbackRouteImport } from './routes/api.spotify.callback'
 import { Route as AppPlaylistsIdRouteImport } from './routes/_app/playlists.$id'
@@ -66,6 +67,11 @@ const AppLibraryRoute = AppLibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => AppRoute,
 } as any)
+const AppHomeRoute = AppHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppConnectRoute = AppConnectRouteImport.update({
   id: '/connect',
   path: '/connect',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/connect': typeof AppConnectRoute
+  '/home': typeof AppHomeRoute
   '/library': typeof AppLibraryRoute
   '/playlists': typeof AppPlaylistsRouteWithChildren
   '/settings': typeof AppSettingsRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/connect': typeof AppConnectRoute
+  '/home': typeof AppHomeRoute
   '/library': typeof AppLibraryRoute
   '/playlists': typeof AppPlaylistsRouteWithChildren
   '/settings': typeof AppSettingsRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_app/connect': typeof AppConnectRoute
+  '/_app/home': typeof AppHomeRoute
   '/_app/library': typeof AppLibraryRoute
   '/_app/playlists': typeof AppPlaylistsRouteWithChildren
   '/_app/settings': typeof AppSettingsRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/connect'
+    | '/home'
     | '/library'
     | '/playlists'
     | '/settings'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/connect'
+    | '/home'
     | '/library'
     | '/playlists'
     | '/settings'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/_app/connect'
+    | '/_app/home'
     | '/_app/library'
     | '/_app/playlists'
     | '/_app/settings'
@@ -241,6 +253,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLibraryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/home': {
+      id: '/_app/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AppHomeRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/connect': {
       id: '/_app/connect'
       path: '/connect'
@@ -279,6 +298,7 @@ const AppPlaylistsRouteWithChildren = AppPlaylistsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppConnectRoute: typeof AppConnectRoute
+  AppHomeRoute: typeof AppHomeRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppPlaylistsRoute: typeof AppPlaylistsRouteWithChildren
   AppSettingsRoute: typeof AppSettingsRoute
@@ -286,6 +306,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppConnectRoute: AppConnectRoute,
+  AppHomeRoute: AppHomeRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppPlaylistsRoute: AppPlaylistsRouteWithChildren,
   AppSettingsRoute: AppSettingsRoute,

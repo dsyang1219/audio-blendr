@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { TrackList } from "@/components/TrackList";
@@ -8,6 +8,7 @@ import type { Track } from "@/lib/player-context";
 import { usePlayer } from "@/lib/player-context";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Artwork } from "@/components/Artwork";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { AddSongDialog } from "@/components/AddSongDialog";
+import { TrackListToolbar } from "@/components/TrackListToolbar";
+import { TrackListSkeleton } from "@/components/TrackListSkeleton";
+import { filterAndSortTracks, type TrackSort } from "@/lib/track-filter";
 import { syncSinglePlaylist } from "@/utils/spotify.functions";
 
 export const Route = createFileRoute("/_app/playlists/$id")({
@@ -56,6 +60,12 @@ function PlaylistDetail() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<TrackSort>("default");
+  const visibleTracks = useMemo(
+    () => filterAndSortTracks(tracks, query, sort),
+    [tracks, query, sort],
+  );
   const syncOneFn = useServerFn(syncSinglePlaylist);
 
   // Edit dialog state
@@ -88,7 +98,7 @@ function PlaylistDetail() {
     load();
   }, [load]);
 
-  const queueTracks = tracks.map((t) => ({ ...t, sourceTable: "playlist_tracks" as const }));
+  const queueTracks = visibleTracks.map((t) => ({ ...t, sourceTable: "playlist_tracks" as const }));
 
   const handlePlayAll = () => {
     if (queueTracks.length === 0) return;
@@ -201,7 +211,19 @@ function PlaylistDetail() {
     }
   };
 
-  if (loading) return <div className="p-8 text-muted-foreground">Loading…</div>;
+  if (loading) {
+    return (
+      <div className="animate-fade-in">
+        <div className="relative bg-secondary px-4 pb-10 pt-12 md:px-8 md:pt-16">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
+          <div className="relative h-40 w-40 rounded-2xl bg-muted/40 md:h-52 md:w-52" />
+        </div>
+        <div className="px-4 pb-8 pt-2 md:px-8">
+          <TrackListSkeleton />
+        </div>
+      </div>
+    );
+  }
   if (!playlist) return <div className="p-8 text-muted-foreground">Playlist not found</div>;
 
   const isCustom = playlist.source === "custom";
@@ -219,17 +241,12 @@ function PlaylistDetail() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
         <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-end">
           <div className="h-40 w-40 md:h-52 md:w-52 flex-shrink-0 overflow-hidden rounded-2xl bg-muted shadow-elegant ring-1 ring-white/10">
-            {playlist.cover_url ? (
-              <img
-                src={playlist.cover_url}
-                alt={playlist.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-background/30">
-                <Music className="h-16 w-16 md:h-20 md:w-20 text-primary-foreground/80" />
-              </div>
-            )}
+            <Artwork
+              src={playlist.cover_url}
+              alt={playlist.name}
+              className="bg-background/30"
+              iconClassName="max-h-20 max-w-20 text-primary-foreground/80"
+            />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground/90">
@@ -417,15 +434,30 @@ function PlaylistDetail() {
           </DialogContent>
         </Dialog>
 
+        {tracks.length > 0 && (
+          <TrackListToolbar
+            query={query}
+            onQueryChange={setQuery}
+            sort={sort}
+            onSortChange={setSort}
+            shown={visibleTracks.length}
+            total={tracks.length}
+          />
+        )}
+
         {tracks.length === 0 ? (
           <p className="text-muted-foreground">
             {isSpotifyLinked
               ? 'No tracks yet. Click "Sync from Spotify" above to import this playlist\'s tracks.'
               : 'No tracks yet. Click "Add song" above to add from Spotify or YouTube.'}
           </p>
+        ) : visibleTracks.length === 0 ? (
+          <p className="glass rounded-2xl p-8 text-center text-sm text-muted-foreground">
+            No songs match "{query}".
+          </p>
         ) : (
           <TrackList
-            tracks={tracks}
+            tracks={visibleTracks}
             table="playlist_tracks"
             playlistId={id}
             isCustomPlaylist={isEditable}

@@ -1,18 +1,12 @@
-import {
-  createFileRoute,
-  Outlet,
-  redirect,
-  Link,
-  useNavigate,
-  useLocation,
-} from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Music, Heart, Library, LogOut, Plug, Settings, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Artwork } from "@/components/Artwork";
+import { Heart, Home, Library, LogOut, Plug, Settings, Menu } from "lucide-react";
 import { Player } from "@/components/Player";
 import { Logo } from "@/components/Logo";
 
@@ -50,6 +44,11 @@ function AppLayout() {
     );
   }
 
+  const displayName =
+    (user.user_metadata?.display_name as string | undefined)?.trim() ||
+    user.email?.split("@")[0] ||
+    "You";
+
   const sidebarContent = (
     <>
       <Link to="/" className="mb-6 block px-1">
@@ -57,6 +56,9 @@ function AppLayout() {
       </Link>
 
       <nav className="space-y-1.5">
+        <NavItem to="/home" icon={<Home className="h-4 w-4" />}>
+          Home
+        </NavItem>
         <NavItem to="/library" icon={<Heart className="h-4 w-4" />}>
           Liked Songs
         </NavItem>
@@ -64,7 +66,7 @@ function AppLayout() {
           Playlists
         </NavItem>
         <NavItem to="/connect" icon={<Plug className="h-4 w-4" />}>
-          Spotify and Youtube Sync
+          Sync
         </NavItem>
         <NavItem to="/settings" icon={<Settings className="h-4 w-4" />}>
           Settings
@@ -91,13 +93,7 @@ function AppLayout() {
                 className="flex items-center gap-2 truncate rounded-lg px-3 py-1.5 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
               >
                 <div className="h-6 w-6 flex-shrink-0 overflow-hidden rounded bg-muted">
-                  {p.cover_url ? (
-                    <img src={p.cover_url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-secondary">
-                      <Music className="h-3 w-3 text-secondary-foreground" />
-                    </div>
-                  )}
+                  <Artwork src={p.cover_url} iconClassName="max-h-3 max-w-3" />
                 </div>
                 <span className="truncate">{p.name}</span>
               </Link>
@@ -107,12 +103,18 @@ function AppLayout() {
       </div>
 
       <div className="mt-4 pt-4">
-        <div className="mb-2 flex items-center gap-2 rounded-lg bg-sidebar-accent/50 px-3 py-2">
-          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">
-            {(user.email?.[0] ?? "U").toUpperCase()}
+        <Link
+          to="/settings"
+          className="mb-2 flex items-center gap-2 rounded-lg bg-sidebar-accent/50 px-3 py-2 transition-colors hover:bg-sidebar-accent"
+        >
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+            {displayName[0].toUpperCase()}
           </div>
-          <span className="truncate text-xs text-muted-foreground">{user.email}</span>
-        </div>
+          <div className="min-w-0">
+            <div className="truncate text-xs font-semibold">{displayName}</div>
+            <div className="truncate text-[11px] text-muted-foreground">{user.email}</div>
+          </div>
+        </Link>
         <Button
           variant="ghost"
           size="sm"
@@ -143,7 +145,8 @@ function AppLayout() {
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 bg-sidebar p-4 flex flex-col">
+          <SheetContent side="left" className="flex w-72 flex-col bg-sidebar p-4">
+            <SheetTitle className="sr-only">Navigation</SheetTitle>
             {sidebarContent}
           </SheetContent>
         </Sheet>
@@ -188,6 +191,3 @@ function NavItem({
     </Link>
   );
 }
-
-// satisfy redirect import (used by future guard expansions)
-void redirect;

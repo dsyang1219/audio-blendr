@@ -3,6 +3,21 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import { getSpotifyStatus, disconnectSpotify } from "@/utils/spotify.functions";
+import { deleteAccount } from "@/utils/account.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -14,6 +29,7 @@ import {
   Unplug,
   Loader2,
   ShieldAlert,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +42,8 @@ function SettingsPage() {
   const navigate = useNavigate();
   const getStatusFn = useServerFn(getSpotifyStatus);
   const disconnectFn = useServerFn(disconnectSpotify);
+  const deleteAccountFn = useServerFn(deleteAccount);
+  const [confirmation, setConfirmation] = useState("");
 
   const [status, setStatus] = useState<{ connected: boolean; displayName: string | null } | null>(
     null,
@@ -64,7 +82,26 @@ function SettingsPage() {
     }
   };
 
-  const initial = (user?.email?.[0] ?? "U").toUpperCase();
+  const handleDeleteAccount = async () => {
+    setBusy("delete");
+    try {
+      await deleteAccountFn({ data: { confirmation } });
+      // The auth user is gone server-side; just drop the local session.
+      await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+      toast.success("Your account and all of its data have been deleted");
+      navigate({ to: "/" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete account");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const displayName =
+    (user?.user_metadata?.display_name as string | undefined)?.trim() ||
+    user?.email?.split("@")[0] ||
+    "You";
+  const initial = displayName[0].toUpperCase();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8 animate-fade-in">
@@ -97,10 +134,8 @@ function SettingsPage() {
               {initial}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{user?.email ?? "—"}</p>
-              <p className="font-mono text-[11px] text-muted-foreground">
-                ID: {user?.id?.slice(0, 8) ?? "—"}…
-              </p>
+              <p className="truncate text-sm font-medium">{displayName}</p>
+              <p className="truncate text-xs text-muted-foreground">{user?.email ?? "—"}</p>
             </div>
           </div>
           <Separator />
@@ -174,10 +209,55 @@ function SettingsPage() {
           </CardTitle>
           <CardDescription>Irreversible actions. Proceed with care.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            To wipe your library or delete your account, contact support.
+            Deleting your account permanently removes your profile, Spotify connection, liked songs,
+            playlists, uploaded covers and listening history. This cannot be undone.
           </p>
+          <AlertDialog onOpenChange={(open) => !open && setConfirmation("")}>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="mr-2 h-4 w-4" /> Delete account
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Everything tied to <span className="font-medium">{user?.email}</span> will be
+                  erased. Type <span className="font-mono font-semibold">DELETE</span> to confirm.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-2">
+                <Label htmlFor="delete-confirm">Confirmation</Label>
+                <Input
+                  id="delete-confirm"
+                  autoComplete="off"
+                  value={confirmation}
+                  onChange={(e) => setConfirmation(e.target.value)}
+                  placeholder="DELETE"
+                />
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void handleDeleteAccount();
+                  }}
+                  disabled={confirmation !== "DELETE" || busy === "delete"}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {busy === "delete" ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 h-4 w-4" />
+                  )}
+                  Delete permanently
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
     </div>

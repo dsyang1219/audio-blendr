@@ -13,7 +13,7 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   const { user } = useAuth();
-  const ctaTo = user ? "/library" : "/auth";
+  const ctaTo = user ? "/home" : "/auth";
 
   return (
     <div className="relative min-h-screen overflow-hidden text-foreground">
@@ -24,8 +24,8 @@ function Landing() {
         </Link>
         <div className="flex gap-2">
           {user ? (
-            <Link to="/library">
-              <Button variant="secondary">Open library</Button>
+            <Link to="/home">
+              <Button variant="secondary">Open app</Button>
             </Link>
           ) : (
             <>
