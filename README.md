@@ -19,25 +19,30 @@ Connect Spotify, sync your liked songs and playlists, and stream every track thr
 
 ## Screenshots
 
+|                             Home                             |                              Library                              |
+| :----------------------------------------------------------: | :---------------------------------------------------------------: |
+| ![Home page with recently played](docs/screenshots/home.png) | ![Liked songs with filter and sort](docs/screenshots/library.png) |
+
+|                       Queue                        |                          Mobile now playing                           |
+| :------------------------------------------------: | :-------------------------------------------------------------------: |
+| ![Up-next queue panel](docs/screenshots/queue.png) | ![Mobile full-screen player](docs/screenshots/mobile-now-playing.png) |
+
 |                    Landing                    |                  Sign in                   |
 | :-------------------------------------------: | :----------------------------------------: |
 | ![Landing page](docs/screenshots/landing.png) | ![Sign-in page](docs/screenshots/auth.png) |
-
-|                     Storage notice                      |                 Privacy policy                  |
-| :-----------------------------------------------------: | :---------------------------------------------: |
-| ![Consent banner](docs/screenshots/landing-consent.png) | ![Privacy policy](docs/screenshots/privacy.png) |
-
-> Library, playlist and player views require a signed-in account with a linked Spotify — add your own captures to `docs/screenshots/` and reference them here.
 
 ## Features
 
 - **Spotify OAuth** — link a Spotify account with a signed, expiring `state` parameter (HMAC-SHA256) so the callback can safely trust the user it belongs to.
 - **Library sync** — import liked songs and playlists as metadata; nothing is downloaded or re-hosted.
 - **Lazy YouTube resolution** — each track is matched to a YouTube video the first time it's played (with a ladder of fallback queries) and the result is cached on the row. This keeps the app inside the YouTube Data API's 10,000-unit daily quota.
-- **Unified player** — persistent bottom player with queue, shuffle, volume, prefetch of the next track, and a hidden privacy-enhanced (`youtube-nocookie.com`) embed.
+- **A real player** — persistent bottom bar with an up-next queue panel, shuffle, repeat (off / all / one), volume and mute, seek, and next-track prefetch. The queue survives a page refresh. Keyboard shortcuts: `Space` play/pause, `←`/`→` seek 10s, `Shift+←`/`→` previous/next, `S` shuffle, `R` repeat, `M` mute. Lock-screen and headphone controls via the Media Session API.
+- **Home** — time-of-day greeting, recently played (deduplicated listening history), quick actions and your playlists.
+- **Library tools** — instant filter across title/artist/album and sort by date added, title, artist, album or duration; play and shuffle act on the filtered view.
 - **Playlist management** — create, rename, reorder (drag-and-drop), upload cover art, and add tracks from Spotify search or existing library.
 - **Multi-tenant by construction** — every table has row-level security; server functions run with the caller's JWT so a bug in application code can't leak another user's rows.
-- **Compliance basics** — privacy policy, terms of service, and a storage/cookie notice.
+- **Self-service account deletion** — typed confirmation, removes uploaded covers, then deletes the auth user and everything cascading from it.
+- **Compliance basics** — privacy policy, terms of service, storage/cookie notice, privacy-enhanced YouTube embed.
 
 ## Architecture
 
@@ -146,6 +151,7 @@ Unit tests live next to the code they cover in `src/**/__tests__/` and target th
 
 - **`spotify-auth`** — signed state round-trips, tamper/forgery rejection, expiry, secret rotation, and the open-redirect guard on return origins.
 - **`youtube.server`** — ISO-8601 duration parsing, title cleaning, and the query fallback ladder.
+- **`track-filter`** — the library filter/sort used by the Liked Songs and playlist screens.
 
 ```bash
 bun run test
@@ -204,9 +210,8 @@ The first deploy prints your `*.workers.dev` URL. To use your own domain, add it
 
 ## Roadmap
 
-- [ ] Self-service account deletion from Settings
-- [ ] Persist play history and surface "recently played"
 - [ ] Offline queue / PWA install
+- [ ] Drag-to-reorder inside the queue panel
 - [ ] Import from a YouTube Music library as a second source
 
 ## License
