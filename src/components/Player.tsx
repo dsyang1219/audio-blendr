@@ -1,50 +1,89 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import YouTube from "react-youtube";
 import type { YouTubePlayer } from "react-youtube";
 import {
-  Play,
+  ListMusic,
   Pause,
+  Play,
+  Repeat,
+  Repeat1,
+  Shuffle,
   SkipBack,
   SkipForward,
-  Music,
+  Volume1,
   Volume2,
-  Shuffle,
-  ChevronDown,
+  VolumeX,
 } from "lucide-react";
-import { usePlayer } from "@/lib/player-context";
 import { useServerFn } from "@tanstack/react-start";
-import { resolveYouTube } from "@/utils/youtube.functions";
-import { Slider } from "@/components/ui/slider";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import { usePlayer } from "@/lib/player-context";
+import { resolveYouTube } from "@/utils/youtube.functions";
+import { Artwork } from "@/components/Artwork";
+import { QueuePanel } from "@/components/QueuePanel";
+import { Slider } from "@/components/ui/slider";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+
+const SEEK_STEP_SECONDS = 10;
+
+// YT.PlayerState values
+const YT_ENDED = 0;
+const YT_UNSTARTED = -1;
+const YT_CUED = 5;
+
+const YT_ERROR_MESSAGES: Record<number, string> = {
+  2: "Invalid video",
+  5: "Playback error",
+  100: "Video removed or private",
+  101: "Embedding disabled by uploader",
+  150: "Embedding disabled by uploader",
+};
+
+function fmt(s: number) {
+  if (!s || !isFinite(s)) return "0:00";
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+function isTypingTarget(el: EventTarget | null) {
+  if (!(el instanceof HTMLElement)) return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+}
 
 export function Player() {
   const {
     current,
     isPlaying,
     setIsPlaying,
+    togglePlay,
     playNext,
     playPrev,
     shuffle,
     toggleShuffle,
+    repeat,
+    cycleRepeat,
+    volume,
+    setVolume,
     queue,
     currentIndex,
     setTrackVideoId,
   } = usePlayer();
+
   const [videoId, setVideoId] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(70);
   const [seeking, setSeeking] = useState(false);
-  const seekValueRef = useRef<number | null>(null);
+  const [muted, setMuted] = useState(false);
   const playerRef = useRef<YouTubePlayer | null>(null);
-  const resolveYT = useServerFn(resolveYouTube);
   const prefetchedRef = useRef<Set<string>>(new Set());
+  const resolveYT = useServerFn(resolveYouTube);
 
-  // Resolve YouTube video for current track when it changes
+  const effectiveVolume = muted ? 0 : volume;
+
+  // ---- Resolve the YouTube video for the current track --------------------
   useEffect(() => {
     if (!current) {
       setVideoId(null);
@@ -64,9 +103,8 @@ export function Player() {
         current.sourceTable ?? (current.spotify_track_id ? "liked_tracks" : "playlist_tracks");
       const fallbackTable = preferredTable === "liked_tracks" ? "playlist_tracks" : "liked_tracks";
 
-      // Run both lookups in parallel — take the first successful videoId.
-      // findTrackRow already does an id + (title,artist) fallback per table,
-      // so racing the two tables minimizes latency on first play.
+      // Race both tables: findTrackRow already falls back to a (title, artist)
+      // match, so this minimises first-play latency.
       const lookupOne = (table: typeof preferredTable) =>
         resolveYT({
           data: { table, trackId: current.id, title: current.title, artist: current.artist },
@@ -77,17 +115,15 @@ export function Player() {
           lookupOne(preferredTable),
           lookupOne(fallbackTable),
         ]);
-        const videoId = preferred.videoId ?? fallback.videoId ?? null;
-        const quotaHit = preferred.quotaHit || fallback.quotaHit;
         if (cancelled) return;
-        if (videoId) {
-          setVideoId(videoId);
-          setTrackVideoId(current.id, videoId);
-        } else if (quotaHit) {
-          toast.error(
-            "YouTube daily search quota reached — try again after midnight Pacific time",
-            { id: "yt-quota" },
-          );
+        const found = preferred.videoId ?? fallback.videoId ?? null;
+        if (found) {
+          setVideoId(found);
+          setTrackVideoId(current.id, found);
+        } else if (preferred.quotaHit || fallback.quotaHit) {
+          toast.error("YouTube daily search quota reached — try again after midnight Pacific", {
+            id: "yt-quota",
+          });
         } else {
           toast.error(`Couldn't find "${current.title}" on YouTube`);
         }
@@ -102,24 +138,20 @@ export function Player() {
     };
   }, [current, resolveYT, setTrackVideoId]);
 
-  // Prefetch the next track's YouTube ID so it plays instantly when skipped to
+  // Prefetch the next track's video ID so skipping feels instant.
   useEffect(() => {
     const next = queue[currentIndex + 1];
-    if (!next || next.youtube_video_id) return;
-    if (prefetchedRef.current.has(next.id)) return;
+    if (!next || next.youtube_video_id || prefetchedRef.current.has(next.id)) return;
     prefetchedRef.current.add(next.id);
-
     const table = next.sourceTable ?? (next.spotify_track_id ? "liked_tracks" : "playlist_tracks");
     void resolveYT({ data: { table, trackId: next.id, title: next.title, artist: next.artist } })
       .then((res) => {
         if (res.videoId) setTrackVideoId(next.id, res.videoId);
       })
-      .catch(() => {
-        prefetchedRef.current.delete(next.id);
-      });
+      .catch(() => prefetchedRef.current.delete(next.id));
   }, [queue, currentIndex, resolveYT, setTrackVideoId]);
 
-  // Progress polling
+  // ---- Playback plumbing ---------------------------------------------------
   useEffect(() => {
     if (!playerRef.current) return;
     const id = setInterval(() => {
@@ -129,75 +161,258 @@ export function Player() {
         const d = playerRef.current?.getDuration?.() ?? 0;
         setProgress(p);
         setDuration(d);
+        if (d > 0 && "mediaSession" in navigator) {
+          navigator.mediaSession.setPositionState?.({
+            duration: d,
+            playbackRate: 1,
+            position: Math.min(p, d),
+          });
+        }
       } catch {
-        /* ignore */
+        /* player not ready */
       }
     }, 500);
     return () => clearInterval(id);
   }, [videoId, seeking]);
 
-  // React to isPlaying toggle
   useEffect(() => {
-    if (!playerRef.current) return;
     try {
-      if (isPlaying) playerRef.current.playVideo();
-      else playerRef.current.pauseVideo();
+      if (isPlaying) playerRef.current?.playVideo();
+      else playerRef.current?.pauseVideo();
     } catch {
-      /* ignore */
+      /* player not ready */
     }
   }, [isPlaying]);
 
-  // Volume changes
   useEffect(() => {
     try {
-      playerRef.current?.setVolume?.(volume);
+      playerRef.current?.setVolume?.(effectiveVolume);
     } catch {
-      /* ignore */
+      /* player not ready */
     }
-  }, [volume]);
+  }, [effectiveVolume]);
 
-  const fmt = (s: number) => {
-    if (!s || !isFinite(s)) return "0:00";
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, "0")}`;
-  };
+  const seekTo = useCallback(
+    (seconds: number) => {
+      if (!playerRef.current || !duration) return;
+      const t = Math.min(Math.max(seconds, 0), duration);
+      try {
+        playerRef.current.seekTo(t, true);
+      } catch {
+        /* player not ready */
+      }
+      setProgress(t);
+    },
+    [duration],
+  );
+
+  const seekBy = useCallback((delta: number) => seekTo(progress + delta), [seekTo, progress]);
+
+  const toggleMute = useCallback(() => setMuted((m) => !m), []);
+
+  // ---- Media Session: lock screen / headphone / OS media keys --------------
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    if (!current) {
+      navigator.mediaSession.metadata = null;
+      return;
+    }
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: current.title,
+      artist: current.artist,
+      album: current.album ?? "",
+      artwork: current.album_art_url
+        ? [{ src: current.album_art_url, sizes: "512x512", type: "image/jpeg" }]
+        : [],
+    });
+  }, [current]);
+
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    navigator.mediaSession.playbackState = current ? (isPlaying ? "playing" : "paused") : "none";
+  }, [current, isPlaying]);
+
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    const ms = navigator.mediaSession;
+    const handlers: Array<[MediaSessionAction, MediaSessionActionHandler | null]> = [
+      ["play", () => setIsPlaying(true)],
+      ["pause", () => setIsPlaying(false)],
+      ["previoustrack", () => playPrev()],
+      ["nexttrack", () => playNext()],
+      ["seekbackward", (d) => seekBy(-(d.seekOffset ?? SEEK_STEP_SECONDS))],
+      ["seekforward", (d) => seekBy(d.seekOffset ?? SEEK_STEP_SECONDS)],
+      ["seekto", (d) => typeof d.seekTime === "number" && seekTo(d.seekTime)],
+    ];
+    for (const [action, handler] of handlers) {
+      try {
+        ms.setActionHandler(action, handler);
+      } catch {
+        /* action unsupported in this browser */
+      }
+    }
+    return () => {
+      for (const [action] of handlers) {
+        try {
+          ms.setActionHandler(action, null);
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+  }, [setIsPlaying, playPrev, playNext, seekBy, seekTo]);
+
+  // ---- Keyboard shortcuts --------------------------------------------------
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || isTypingTarget(e.target)) return;
+      switch (e.key) {
+        case " ":
+          // Let a focused button handle its own Space press.
+          if (e.target instanceof HTMLButtonElement) return;
+          e.preventDefault();
+          if (current) togglePlay();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          if (e.shiftKey) playNext();
+          else seekBy(SEEK_STEP_SECONDS);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          if (e.shiftKey) playPrev();
+          else seekBy(-SEEK_STEP_SECONDS);
+          break;
+        case "m":
+        case "M":
+          toggleMute();
+          break;
+        case "s":
+        case "S":
+          toggleShuffle();
+          break;
+        case "r":
+        case "R":
+          cycleRepeat();
+          break;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [current, togglePlay, playNext, playPrev, seekBy, toggleMute, toggleShuffle, cycleRepeat]);
+
+  // ---- Shared UI pieces ----------------------------------------------------
+  const progressBar = (
+    <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
+      <span className="w-9 text-right font-mono tabular-nums">{fmt(progress)}</span>
+      <Slider
+        value={[duration ? (progress / duration) * 100 : 0]}
+        onValueChange={(v) => {
+          if (!duration) return;
+          setSeeking(true);
+          setProgress((v[0] / 100) * duration);
+        }}
+        onValueCommit={(v) => {
+          if (duration) seekTo((v[0] / 100) * duration);
+          setTimeout(() => setSeeking(false), 250);
+        }}
+        max={100}
+        step={0.5}
+        disabled={!duration}
+        aria-label="Seek"
+        className="flex-1"
+      />
+      <span className="w-9 font-mono tabular-nums">{fmt(duration)}</span>
+    </div>
+  );
+
+  const repeatButton = (size: "sm" | "lg") => (
+    <button
+      type="button"
+      onClick={cycleRepeat}
+      className={cn(
+        "relative transition hover:text-foreground",
+        repeat === "off" ? "text-muted-foreground" : "text-primary",
+      )}
+      aria-label={`Repeat: ${repeat}`}
+      title={`Repeat ${repeat === "off" ? "off" : repeat === "all" ? "all" : "one"} (R)`}
+    >
+      {repeat === "one" ? (
+        <Repeat1 className={size === "lg" ? "h-6 w-6" : "h-4 w-4"} />
+      ) : (
+        <Repeat className={size === "lg" ? "h-6 w-6" : "h-4 w-4"} />
+      )}
+    </button>
+  );
+
+  const shuffleButton = (size: "sm" | "lg") => (
+    <button
+      type="button"
+      onClick={toggleShuffle}
+      className={cn(
+        "transition hover:text-foreground",
+        shuffle ? "text-primary" : "text-muted-foreground",
+      )}
+      aria-label="Toggle shuffle"
+      aria-pressed={shuffle}
+      title={`Shuffle ${shuffle ? "on" : "off"} (S)`}
+    >
+      <Shuffle className={size === "lg" ? "h-6 w-6" : "h-4 w-4"} />
+    </button>
+  );
+
+  const playPauseButton = (size: "sm" | "lg") => (
+    <button
+      type="button"
+      onClick={togglePlay}
+      disabled={!current}
+      className={cn(
+        "flex items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-all active:scale-95 disabled:opacity-40",
+        size === "lg" ? "h-16 w-16" : "h-10 w-10 hover:scale-110 disabled:hover:scale-100",
+        isPlaying && "animate-pulse-glow",
+      )}
+      aria-label={isPlaying ? "Pause" : "Play"}
+      title={`${isPlaying ? "Pause" : "Play"} (Space)`}
+    >
+      {isPlaying ? (
+        <Pause className={size === "lg" ? "h-7 w-7" : "h-4 w-4"} />
+      ) : (
+        <Play className={cn("fill-current", size === "lg" ? "h-7 w-7" : "h-4 w-4")} />
+      )}
+    </button>
+  );
+
+  const VolumeIcon = muted || effectiveVolume === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
 
   return (
-    <footer className="border-t border-border bg-sidebar/90 backdrop-blur-xl px-3 py-2.5 sm:px-4 sm:py-3 shadow-elegant">
+    <footer className="border-t border-border bg-sidebar/90 px-3 py-2.5 shadow-elegant backdrop-blur-xl sm:px-4 sm:py-3">
       <div className="grid grid-cols-[1fr_auto] items-center gap-3 md:grid-cols-3 md:gap-4">
-        {/* Left: now playing — tap on mobile to open full-screen Now Playing sheet */}
+        {/* Left: now playing. On mobile this opens the full-screen sheet. */}
         <Sheet>
           <SheetTrigger asChild>
             <button
               type="button"
               disabled={!current}
-              className="flex min-w-0 items-center gap-3 text-left md:cursor-default md:pointer-events-none disabled:opacity-100"
+              className="flex min-w-0 items-center gap-3 text-left disabled:opacity-100 md:pointer-events-none md:cursor-default"
               aria-label="Open now playing"
             >
               <div
                 className={cn(
-                  "h-11 w-11 sm:h-14 sm:w-14 flex-shrink-0 overflow-hidden rounded-lg bg-muted shadow-elegant transition-transform",
+                  "h-11 w-11 flex-shrink-0 overflow-hidden rounded-lg bg-muted shadow-elegant transition-transform sm:h-14 sm:w-14",
                   isPlaying && "animate-float",
                 )}
               >
-                {current?.album_art_url ? (
-                  <img src={current.album_art_url} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-secondary">
-                    <Music className="h-5 w-5 sm:h-6 sm:w-6 text-secondary-foreground" />
-                  </div>
-                )}
+                <Artwork src={current?.album_art_url} />
               </div>
               <div className="min-w-0">
-                <div className="truncate text-xs sm:text-sm font-semibold">
+                <div className="truncate text-xs font-semibold sm:text-sm">
                   {current?.title ?? "Nothing playing"}
                 </div>
-                <div className="truncate text-[11px] sm:text-xs text-muted-foreground">
+                <div className="truncate text-[11px] text-muted-foreground sm:text-xs">
                   {current?.artist ?? "Pick a song from your library"}
                 </div>
                 {current?.album && (
-                  <div className="hidden sm:block truncate text-[11px] text-muted-foreground/70">
+                  <div className="hidden truncate text-[11px] text-muted-foreground/70 sm:block">
                     {current.album}
                   </div>
                 )}
@@ -206,23 +421,17 @@ export function Player() {
           </SheetTrigger>
           <SheetContent
             side="bottom"
-            className="md:hidden h-[100dvh] w-full bg-gradient-to-b from-sidebar via-background to-background border-0 p-0"
+            className="h-[100dvh] w-full border-0 bg-gradient-to-b from-sidebar via-background to-background p-0 md:hidden"
           >
-            <div className="flex h-full flex-col px-6 pt-6 pb-10">
-              <div className="mb-6 flex items-center justify-between">
+            <SheetTitle className="sr-only">Now playing</SheetTitle>
+            <div className="flex h-full flex-col px-6 pb-10 pt-6">
+              <div className="mb-6">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                   Now Playing
                 </span>
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="mx-auto mb-8 aspect-square w-full max-w-sm overflow-hidden rounded-2xl bg-muted shadow-elegant ring-1 ring-white/10">
-                {current?.album_art_url ? (
-                  <img src={current.album_art_url} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-secondary">
-                    <Music className="h-24 w-24 text-secondary-foreground" />
-                  </div>
-                )}
+                <Artwork src={current?.album_art_url} iconClassName="max-h-24 max-w-24" />
               </div>
               <div className="mb-6 min-w-0">
                 <div className="truncate text-2xl font-bold">
@@ -237,239 +446,138 @@ export function Player() {
                   </div>
                 )}
               </div>
-              <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="w-9 text-right tabular-nums">{fmt(progress)}</span>
-                <Slider
-                  value={[duration ? (progress / duration) * 100 : 0]}
-                  onValueChange={(v) => {
-                    if (!duration) return;
-                    setSeeking(true);
-                    const t = (v[0] / 100) * duration;
-                    seekValueRef.current = t;
-                    setProgress(t);
-                  }}
-                  onValueCommit={(v) => {
-                    if (!playerRef.current || !duration) {
-                      setSeeking(false);
-                      return;
-                    }
-                    const t = (v[0] / 100) * duration;
-                    try {
-                      playerRef.current.seekTo(t, true);
-                    } catch {
-                      /* ignore */
-                    }
-                    setProgress(t);
-                    seekValueRef.current = null;
-                    setTimeout(() => setSeeking(false), 250);
-                  }}
-                  max={100}
-                  step={0.5}
-                  className="flex-1"
-                />
-                <span className="w-9 tabular-nums">{fmt(duration)}</span>
-              </div>
-              <div className="mt-6 flex items-center justify-center gap-8">
+              {progressBar}
+              <div className="mt-8 flex items-center justify-center gap-8">
+                {shuffleButton("lg")}
                 <button
-                  onClick={toggleShuffle}
-                  className={cn("transition", shuffle ? "text-primary" : "text-muted-foreground")}
-                  aria-label="Toggle shuffle"
-                  aria-pressed={shuffle}
-                >
-                  <Shuffle className="h-6 w-6" />
-                </button>
-                <button
+                  type="button"
                   onClick={playPrev}
                   className="text-muted-foreground hover:text-foreground"
                   aria-label="Previous"
                 >
                   <SkipBack className="h-8 w-8" />
                 </button>
+                {playPauseButton("lg")}
                 <button
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  disabled={!current}
-                  className={cn(
-                    "flex h-16 w-16 items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-transform active:scale-95 disabled:opacity-40",
-                    isPlaying && "animate-pulse-glow",
-                  )}
-                  aria-label={isPlaying ? "Pause" : "Play"}
-                >
-                  {isPlaying ? (
-                    <Pause className="h-7 w-7" />
-                  ) : (
-                    <Play className="h-7 w-7 fill-current" />
-                  )}
-                </button>
-                <button
-                  onClick={playNext}
+                  type="button"
+                  onClick={() => playNext()}
                   className="text-muted-foreground hover:text-foreground"
                   aria-label="Next"
                 >
                   <SkipForward className="h-8 w-8" />
                 </button>
-                <div className="w-6" />
+                {repeatButton("lg")}
               </div>
               <div className="mt-8 flex items-center gap-3">
-                <Volume2 className="h-4 w-4 text-muted-foreground" />
+                <button type="button" onClick={toggleMute} aria-label={muted ? "Unmute" : "Mute"}>
+                  <VolumeIcon className="h-4 w-4 text-muted-foreground" />
+                </button>
                 <Slider
-                  value={[volume]}
-                  onValueChange={(v) => setVolume(v[0])}
+                  value={[effectiveVolume]}
+                  onValueChange={(v) => {
+                    setMuted(false);
+                    setVolume(v[0]);
+                  }}
                   max={100}
                   step={1}
+                  aria-label="Volume"
                   className="flex-1"
                 />
+                <QueuePanel>
+                  <button
+                    type="button"
+                    className="ml-2 text-muted-foreground hover:text-foreground"
+                    aria-label="Open queue"
+                  >
+                    <ListMusic className="h-5 w-5" />
+                  </button>
+                </QueuePanel>
               </div>
             </div>
           </SheetContent>
         </Sheet>
 
-        {/* Center: controls */}
-        <div className="flex flex-col items-center gap-1 md:order-none order-last md:col-auto col-span-2">
+        {/* Center: transport controls (desktop) */}
+        <div className="order-last col-span-2 flex flex-col items-center gap-1 md:order-none md:col-auto">
           <div className="flex items-center gap-3 sm:gap-4">
+            {shuffleButton("sm")}
             <button
-              onClick={toggleShuffle}
-              className={cn(
-                "transition hover:text-foreground",
-                shuffle ? "text-primary" : "text-muted-foreground",
-              )}
-              aria-label="Toggle shuffle"
-              aria-pressed={shuffle}
-              title={shuffle ? "Shuffle on" : "Shuffle off"}
-            >
-              <Shuffle className="h-4 w-4" />
-            </button>
-            <button
+              type="button"
               onClick={playPrev}
               className="text-muted-foreground hover:text-foreground"
               aria-label="Previous"
+              title="Previous (Shift+←)"
             >
               <SkipBack className="h-5 w-5" />
             </button>
+            <div className="hidden md:block">{playPauseButton("sm")}</div>
             <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              disabled={!current}
-              className={cn(
-                "hidden md:flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-all hover:scale-110 active:scale-95 disabled:opacity-40 disabled:hover:scale-100",
-                isPlaying && "animate-pulse-glow",
-              )}
-              aria-label={isPlaying ? "Pause" : "Play"}
-            >
-              {isPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4 fill-current" />
-              )}
-            </button>
-            <button
-              onClick={playNext}
+              type="button"
+              onClick={() => playNext()}
               className="text-muted-foreground hover:text-foreground"
               aria-label="Next"
+              title="Next (Shift+→)"
             >
               <SkipForward className="h-5 w-5" />
             </button>
+            {repeatButton("sm")}
           </div>
-          <div className="flex w-full max-w-md items-center gap-2 text-[10px] sm:text-xs text-muted-foreground">
-            <span className="w-8 sm:w-9 text-right tabular-nums">{fmt(progress)}</span>
-            <Slider
-              value={[duration ? (progress / duration) * 100 : 0]}
-              onValueChange={(v) => {
-                if (!duration) return;
-                setSeeking(true);
-                const t = (v[0] / 100) * duration;
-                seekValueRef.current = t;
-                setProgress(t);
-              }}
-              onValueCommit={(v) => {
-                if (!playerRef.current || !duration) {
-                  setSeeking(false);
-                  return;
-                }
-                const t = (v[0] / 100) * duration;
-                try {
-                  playerRef.current.seekTo(t, true);
-                } catch {
-                  /* ignore */
-                }
-                setProgress(t);
-                seekValueRef.current = null;
-                // Allow polling to resume after the player updates internally
-                setTimeout(() => setSeeking(false), 250);
-              }}
-              max={100}
-              step={0.5}
-              className="flex-1"
-            />
-            <span className="w-8 sm:w-9 tabular-nums">{fmt(duration)}</span>
-          </div>
+          <div className="hidden w-full max-w-md md:block">{progressBar}</div>
         </div>
 
-        {/* Right: mobile play button + mobile volume popover + desktop volume slider */}
-        <div className="flex items-center justify-end gap-2">
-          {/* Mobile-only volume popover */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className="md:hidden flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-accent/40 transition"
-                aria-label="Volume"
-              >
-                <Volume2 className="h-4 w-4" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent side="top" align="end" className="w-44 p-3">
-              <div className="flex items-center gap-2">
-                <Volume2 className="h-4 w-4 text-muted-foreground" />
-                <Slider
-                  value={[volume]}
-                  onValueChange={(v) => setVolume(v[0])}
-                  max={100}
-                  step={1}
-                  className="flex-1"
-                />
-              </div>
-            </PopoverContent>
-          </Popover>
-          {/* Mobile-only play button */}
+        {/* Right: queue + volume (desktop); compact play button (mobile) */}
+        <div className="flex items-center justify-end gap-2 md:gap-3">
+          <div className="md:hidden">{playPauseButton("sm")}</div>
+          <QueuePanel>
+            <button
+              type="button"
+              className="hidden h-8 w-8 items-center justify-center rounded text-muted-foreground transition hover:bg-accent hover:text-foreground md:flex"
+              aria-label="Open queue"
+              title="Queue"
+            >
+              <ListMusic className="h-4 w-4" />
+            </button>
+          </QueuePanel>
           <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            disabled={!current}
-            className={cn(
-              "md:hidden flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-all active:scale-95 disabled:opacity-40",
-              isPlaying && "animate-pulse-glow",
-            )}
-            aria-label={isPlaying ? "Pause" : "Play"}
+            type="button"
+            onClick={toggleMute}
+            className="hidden h-8 w-8 items-center justify-center rounded text-muted-foreground transition hover:bg-accent hover:text-foreground md:flex"
+            aria-label={muted ? "Unmute" : "Mute"}
+            title={`${muted ? "Unmute" : "Mute"} (M)`}
           >
-            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 fill-current" />}
+            <VolumeIcon className="h-4 w-4" />
           </button>
-          {/* Desktop volume */}
-          <Volume2 className="hidden md:inline-block h-4 w-4 text-muted-foreground" />
           <Slider
-            value={[volume]}
-            onValueChange={(v) => setVolume(v[0])}
+            value={[effectiveVolume]}
+            onValueChange={(v) => {
+              setMuted(false);
+              setVolume(v[0]);
+            }}
             max={100}
             step={1}
-            className="hidden md:flex w-32"
+            aria-label="Volume"
+            className="hidden w-28 md:flex"
           />
         </div>
       </div>
 
-      {/* Hidden YouTube player */}
+      {/* Mobile progress strip */}
+      <div className="mt-2 md:hidden">{progressBar}</div>
+
+      {/* Hidden YouTube player — the audio source */}
       <div className="sr-only h-0 w-0 overflow-hidden" aria-hidden>
         {videoId && (
           <YouTube
             videoId={videoId}
             opts={{
-              // Privacy-enhanced mode: YouTube does not store viewer info unless the video plays.
+              // Privacy-enhanced host: YouTube stores nothing until the video plays.
               host: "https://www.youtube-nocookie.com",
               playerVars: { autoplay: 1, controls: 0, modestbranding: 1, playsinline: 1 },
             }}
             onReady={(e) => {
               playerRef.current = e.target;
               try {
-                e.target.setVolume(volume);
-              } catch {
-                /* ignore */
-              }
-              try {
+                e.target.setVolume(effectiveVolume);
                 e.target.playVideo();
               } catch {
                 /* ignore */
@@ -477,11 +585,17 @@ export function Player() {
               setIsPlaying(true);
             }}
             onStateChange={(e) => {
-              // YT.PlayerState: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
               const state = (e as unknown as { data: number }).data;
-              if (state === 5 || state === -1) {
-                // Cued or unstarted after a video swap — kick playback
+              if (state === YT_CUED || state === YT_UNSTARTED) {
                 try {
+                  e.target.playVideo();
+                } catch {
+                  /* ignore */
+                }
+              }
+              if (state === YT_ENDED && repeat === "one") {
+                try {
+                  e.target.seekTo(0, true);
                   e.target.playVideo();
                 } catch {
                   /* ignore */
@@ -490,20 +604,16 @@ export function Player() {
             }}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
-            onEnd={() => playNext()}
+            onEnd={() => {
+              if (repeat !== "one") playNext(true);
+            }}
             onError={(e) => {
-              // 2 = invalid id, 5 = HTML5 error, 100 = removed/private, 101/150 = embed disabled by owner
-              const code = (e as unknown as { data: number }).data;
-              const reasons: Record<number, string> = {
-                2: "Invalid video",
-                5: "Playback error",
-                100: "Video removed or private",
-                101: "Embedding disabled by uploader",
-                150: "Embedding disabled by uploader",
-              };
-              const reason = reasons[code] ?? `Error ${code}`;
+              const code = (e as unknown as { data?: number }).data;
+              const reason =
+                (typeof code === "number" && YT_ERROR_MESSAGES[code]) ||
+                (typeof code === "number" ? `Playback error (${code})` : "Playback failed");
               console.error("[YouTube embed error]", code, "for", current?.title, videoId);
-              toast.error(`${current?.title}: ${reason}`);
+              toast.error(`${current?.title ?? "Track"}: ${reason}`);
               setIsPlaying(false);
             }}
           />
