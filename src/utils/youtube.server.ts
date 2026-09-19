@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type DB = SupabaseClient<Database>;
 
@@ -15,6 +16,7 @@ export type TrackLookupRow = {
   title: string;
   artist: string;
   youtube_video_id: string | null;
+  spotify_track_id: string | null;
   user_id: string;
 };
 
@@ -180,7 +182,7 @@ export async function findTrackRow(
 ): Promise<TrackLookupRow | null> {
   const byId = await supabase
     .from(table)
-    .select("id, title, artist, youtube_video_id, user_id")
+    .select("id, title, artist, youtube_video_id, spotify_track_id, user_id")
     .eq("id", trackId)
     .maybeSingle();
 
@@ -192,7 +194,7 @@ export async function findTrackRow(
 
   const byMetadata = await supabase
     .from(table)
-    .select("id, title, artist, youtube_video_id, user_id")
+    .select("id, title, artist, youtube_video_id, spotify_track_id, user_id")
     .eq("user_id", userId)
     .ilike("title", normalizedTitle)
     .ilike("artist", normalizedArtist)
@@ -200,4 +202,113 @@ export async function findTrackRow(
     .maybeSingle();
 
   return byMetadata.data ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Shared match cache (see supabase/migrations/*_track_matches.sql)
+// ---------------------------------------------------------------------------
+
+const ARTIST_SEPARATOR = /\s*(?:,|;|\/|\bfeat\.?|\bft\.?|\bfeaturing\b)\s*/i;
+
+/** Lowercase, strip accents and punctuation, collapse whitespace. */
+export function normalizeText(input: string): string {
+  return input
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[’'`]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** "The Weeknd, Daft Punk" / "A feat. B" -> "The Weeknd" / "A". */
+export function primaryArtist(artist: string): string {
+  const first = artist.split(ARTIST_SEPARATOR)[0]?.trim();
+  return first || artist.trim();
+}
+
+/**
+ * Key under which a song's YouTube match is shared between users. Deliberately
+ * lossy — featured artists, remaster/remix suffixes, case and accents are all
+ * dropped — so the same recording from different libraries collides.
+ */
+export function normalizeMatchKey(artist: string, title: string): string {
+  return `${normalizeText(primaryArtist(artist))}|${normalizeText(cleanTrackTitle(title))}`;
+}
+
+export interface SharedMatch {
+  id: string;
+  videoId: string;
+}
+
+/**
+ * Look up a shared match, preferring an exact Spotify track ID hit over the
+ * fuzzier text key. Reads with the caller's RLS-scoped client. Any error
+ * (including the table not existing yet) is treated as a miss so resolution
+ * can fall through to a live search.
+ */
+export async function lookupSharedMatch(
+  supabase: DB,
+  artist: string,
+  title: string,
+  spotifyTrackId?: string | null,
+): Promise<SharedMatch | null> {
+  try {
+    if (spotifyTrackId) {
+      const bySpotify = await supabase
+        .from("track_matches")
+        .select("id, youtube_video_id")
+        .eq("spotify_track_id", spotifyTrackId)
+        .limit(1)
+        .maybeSingle();
+      if (bySpotify.data)
+        return { id: bySpotify.data.id, videoId: bySpotify.data.youtube_video_id };
+    }
+    const byKey = await supabase
+      .from("track_matches")
+      .select("id, youtube_video_id")
+      .eq("match_key", normalizeMatchKey(artist, title))
+      .maybeSingle();
+    if (byKey.error) throw byKey.error;
+    return byKey.data ? { id: byKey.data.id, videoId: byKey.data.youtube_video_id } : null;
+  } catch (e) {
+    console.warn("[youtube] Shared match lookup failed:", e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
+/**
+ * Record a match produced by a real YouTube search so other users skip the
+ * search. Uses the service role because the table has no user write policies;
+ * an existing row for the key is kept (first seen wins).
+ */
+export async function storeSharedMatch(input: {
+  artist: string;
+  title: string;
+  spotifyTrackId?: string | null;
+  videoId: string;
+}): Promise<void> {
+  try {
+    const { error } = await supabaseAdmin.from("track_matches").upsert(
+      {
+        match_key: normalizeMatchKey(input.artist, input.title),
+        artist: input.artist,
+        title: input.title,
+        spotify_track_id: input.spotifyTrackId ?? null,
+        youtube_video_id: input.videoId,
+      },
+      { onConflict: "match_key", ignoreDuplicates: true },
+    );
+    if (error) throw error;
+  } catch (e) {
+    console.warn("[youtube] Failed to store shared match:", e instanceof Error ? e.message : e);
+  }
+}
+
+/** Fire-and-forget usage counter; never blocks resolution. */
+export function recordSharedMatchHit(id: string): void {
+  void supabaseAdmin.rpc("bump_track_match", { _id: id }).then(({ error }) => {
+    if (error) console.warn("[youtube] bump_track_match failed:", error.message);
+  });
 }

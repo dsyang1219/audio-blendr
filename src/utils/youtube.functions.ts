@@ -5,6 +5,9 @@ import {
   searchYouTubeOnce,
   buildYouTubeQuery,
   buildYouTubeQueryLadder,
+  lookupSharedMatch,
+  storeSharedMatch,
+  recordSharedMatchHit,
   YouTubeQuotaError,
   type DB,
   type TrackTable,
@@ -12,6 +15,15 @@ import {
 
 const BATCH_CAP = 90;
 
+export type ResolveSource = "row" | "cache" | "search";
+
+/**
+ * Find the YouTube video for one of the caller's tracks. Order of preference:
+ *   1. the row already has a video id (free)
+ *   2. the shared cross-user match cache (one cheap DB read)
+ *   3. a live YouTube search ladder (100 quota units per rung)
+ * A successful search is written back to the row and to the shared cache.
+ */
 export const resolveYouTube = createServerFn({ method: "POST" })
   .middleware([requireServerFnAuth])
   .inputValidator((d: { table: TrackTable; trackId: string; title?: string; artist?: string }) => d)
@@ -34,16 +46,23 @@ export const resolveYouTube = createServerFn({ method: "POST" })
         title: data.title,
         artist: data.artist,
       });
-      return { videoId: null };
+      return { videoId: null, quotaHit: false };
     }
 
-    if (row.youtube_video_id) return { videoId: row.youtube_video_id };
+    if (row.youtube_video_id) {
+      return { videoId: row.youtube_video_id, quotaHit: false, source: "row" as ResolveSource };
+    }
 
-    const queries = buildYouTubeQueryLadder(row.artist, row.title);
+    const cached = await lookupSharedMatch(supabase, row.artist, row.title, row.spotify_track_id);
+    if (cached) {
+      await supabase.from(data.table).update({ youtube_video_id: cached.videoId }).eq("id", row.id);
+      recordSharedMatchHit(cached.id);
+      return { videoId: cached.videoId, quotaHit: false, source: "cache" as ResolveSource };
+    }
 
     let videoId: string | null = null;
     let quotaHit = false;
-    for (const query of queries) {
+    for (const query of buildYouTubeQueryLadder(row.artist, row.title)) {
       try {
         videoId = await searchYouTubeOnce(query);
         if (videoId) break;
@@ -57,8 +76,16 @@ export const resolveYouTube = createServerFn({ method: "POST" })
     }
 
     if (videoId) {
-      await supabase.from(data.table).update({ youtube_video_id: videoId }).eq("id", row.id);
-      return { videoId };
+      await Promise.all([
+        supabase.from(data.table).update({ youtube_video_id: videoId }).eq("id", row.id),
+        storeSharedMatch({
+          artist: row.artist,
+          title: row.title,
+          spotifyTrackId: row.spotify_track_id,
+          videoId,
+        }),
+      ]);
+      return { videoId, quotaHit: false, source: "search" as ResolveSource };
     }
 
     if (quotaHit) {
@@ -70,6 +97,10 @@ export const resolveYouTube = createServerFn({ method: "POST" })
     return { videoId: null, quotaHit: false };
   });
 
+/**
+ * Resolve up to `cap` of the caller's unresolved tracks. Cache hits are free,
+ * so they are all applied first; only genuine misses spend search quota.
+ */
 export const batchResolveYouTube = createServerFn({ method: "POST" })
   .middleware([requireServerFnAuth])
   .inputValidator((d: { cap?: number }) => d ?? {})
@@ -81,19 +112,25 @@ export const batchResolveYouTube = createServerFn({ method: "POST" })
     const [liked, playlistTracks] = await Promise.all([
       supabase
         .from("liked_tracks")
-        .select("id, title, artist")
+        .select("id, title, artist, spotify_track_id")
         .eq("user_id", userId)
         .is("youtube_video_id", null)
         .limit(cap),
       supabase
         .from("playlist_tracks")
-        .select("id, title, artist")
+        .select("id, title, artist, spotify_track_id")
         .eq("user_id", userId)
         .is("youtube_video_id", null)
         .limit(cap),
     ]);
 
-    type Pending = { table: TrackTable; id: string; title: string; artist: string };
+    type Pending = {
+      table: TrackTable;
+      id: string;
+      title: string;
+      artist: string;
+      spotify_track_id: string | null;
+    };
     const pending: Pending[] = [
       ...(liked.data ?? []).map((r) => ({ table: "liked_tracks" as const, ...r })),
       ...(playlistTracks.data ?? []).map((r) => ({ table: "playlist_tracks" as const, ...r })),
@@ -102,19 +139,51 @@ export const batchResolveYouTube = createServerFn({ method: "POST" })
     const totalUnresolved = (liked.data?.length ?? 0) + (playlistTracks.data?.length ?? 0);
 
     if (pending.length === 0) {
-      return { resolved: 0, attempted: 0, remaining: 0, quotaHit: false, total: 0 };
+      return { resolved: 0, fromCache: 0, attempted: 0, remaining: 0, quotaHit: false, total: 0 };
     }
 
     let resolved = 0;
+    let fromCache = 0;
     let attempted = 0;
     let quotaHit = false;
 
+    // Pass 1: shared cache — no quota spent.
+    const misses: Pending[] = [];
     for (const track of pending) {
+      const cached = await lookupSharedMatch(
+        supabase,
+        track.artist,
+        track.title,
+        track.spotify_track_id,
+      );
+      if (cached) {
+        await supabase
+          .from(track.table)
+          .update({ youtube_video_id: cached.videoId })
+          .eq("id", track.id);
+        recordSharedMatchHit(cached.id);
+        resolved++;
+        fromCache++;
+      } else {
+        misses.push(track);
+      }
+    }
+
+    // Pass 2: live search for the rest, stopping at the first quota error.
+    for (const track of misses) {
       attempted++;
       try {
         const videoId = await searchYouTubeOnce(buildYouTubeQuery(track.artist, track.title));
         if (videoId) {
-          await supabase.from(track.table).update({ youtube_video_id: videoId }).eq("id", track.id);
+          await Promise.all([
+            supabase.from(track.table).update({ youtube_video_id: videoId }).eq("id", track.id),
+            storeSharedMatch({
+              artist: track.artist,
+              title: track.title,
+              spotifyTrackId: track.spotify_track_id,
+              videoId,
+            }),
+          ]);
           resolved++;
         }
       } catch (e) {
@@ -130,6 +199,7 @@ export const batchResolveYouTube = createServerFn({ method: "POST" })
 
     return {
       resolved,
+      fromCache,
       attempted,
       remaining: Math.max(0, totalUnresolved - resolved),
       quotaHit,

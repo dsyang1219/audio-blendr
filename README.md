@@ -35,7 +35,7 @@ Connect Spotify, sync your liked songs and playlists, and stream every track thr
 
 - **Spotify OAuth** — link a Spotify account with a signed, expiring `state` parameter (HMAC-SHA256) so the callback can safely trust the user it belongs to.
 - **Library sync** — import liked songs and playlists as metadata; nothing is downloaded or re-hosted.
-- **Lazy YouTube resolution** — each track is matched to a YouTube video the first time it's played (with a ladder of fallback queries) and the result is cached on the row. This keeps the app inside the YouTube Data API's 10,000-unit daily quota.
+- **Lazy YouTube resolution with a shared match cache** — each track is matched to a YouTube video the first time anyone plays it (with a ladder of fallback queries). The result is cached on the user's row _and_ in a cross-user `track_matches` table, so a song is searched once for the whole app. Playback itself costs no quota; this keeps the 100-unit `search.list` calls well inside the YouTube Data API's 10,000-unit daily budget.
 - **A real player** — persistent bottom bar with an up-next queue panel, shuffle, repeat (off / all / one), volume and mute, seek, and next-track prefetch. The queue survives a page refresh. Keyboard shortcuts: `Space` play/pause, `←`/`→` seek 10s, `Shift+←`/`→` previous/next, `S` shuffle, `R` repeat, `M` mute. Lock-screen and headphone controls via the Media Session API.
 - **Home** — time-of-day greeting, recently played (deduplicated listening history), quick actions and your playlists.
 - **Library tools** — instant filter across title/artist/album and sort by date added, title, artist, album or duration; play and shuffle act on the filtered view.
@@ -59,19 +59,20 @@ TanStack Start on Cloudflare Workers
   │
   ▼
 Supabase (Postgres + Auth + Storage)          Spotify Web API      YouTube Data API v3
-  profiles · spotify_connections · liked_tracks
-  playlists · playlist_tracks · user_roles
+  profiles · spotify_connections · liked_tracks · playlists
+  playlist_tracks · play_history · track_matches · user_roles
 ```
 
 **Why these choices**
 
-| Decision                                                                                | Reasoning                                                                                                                                                                     |
-| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TanStack Start server functions instead of a separate REST API                          | End-to-end types, no client/server drift, and the auth middleware attaches the user's JWT to every call automatically.                                                        |
-| RLS-scoped client in server functions, service-role client _only_ in the OAuth callback | Keeps the blast radius small: application code physically cannot read another user's rows even if a query is wrong.                                                           |
-| HMAC-signed OAuth `state`                                                               | The callback writes tokens with elevated privileges, so it must be able to trust `state.userId`. An unsigned state would let anyone bind their Spotify to a victim's account. |
-| Resolve YouTube IDs lazily on first play                                                | `search.list` costs 100 quota units. Resolving a 2,000-track library up front would burn 20 days of quota.                                                                    |
-| Web Crypto (not `node:crypto`) for signing                                              | Runs identically on Node during tests and on the Cloudflare Workers runtime in production.                                                                                    |
+| Decision                                                                                | Reasoning                                                                                                                                                                                                                     |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TanStack Start server functions instead of a separate REST API                          | End-to-end types, no client/server drift, and the auth middleware attaches the user's JWT to every call automatically.                                                                                                        |
+| RLS-scoped client in server functions, service-role client _only_ in the OAuth callback | Keeps the blast radius small: application code physically cannot read another user's rows even if a query is wrong.                                                                                                           |
+| HMAC-signed OAuth `state`                                                               | The callback writes tokens with elevated privileges, so it must be able to trust `state.userId`. An unsigned state would let anyone bind their Spotify to a victim's account.                                                 |
+| Resolve YouTube IDs lazily on first play                                                | `search.list` costs 100 quota units. Resolving a 2,000-track library up front would burn 20 days of quota.                                                                                                                    |
+| Shared match cache readable by all users, writable only by the service role             | Popular songs overlap across libraries, so one search serves everyone. Users get no write policy at all, so nobody can point a song at a bogus video for other people — only the server writes, and only after a real search. |
+| Web Crypto (not `node:crypto`) for signing                                              | Runs identically on Node during tests and on the Cloudflare Workers runtime in production.                                                                                                                                    |
 
 ## Tech stack
 

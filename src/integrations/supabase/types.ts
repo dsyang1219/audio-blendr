@@ -244,6 +244,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      track_matches: {
+        Row: {
+          artist: string;
+          created_at: string;
+          hit_count: number;
+          id: string;
+          match_key: string;
+          spotify_track_id: string | null;
+          title: string;
+          updated_at: string;
+          youtube_video_id: string;
+        };
+        Insert: {
+          artist: string;
+          created_at?: string;
+          hit_count?: number;
+          id?: string;
+          match_key: string;
+          spotify_track_id?: string | null;
+          title: string;
+          updated_at?: string;
+          youtube_video_id: string;
+        };
+        Update: {
+          artist?: string;
+          created_at?: string;
+          hit_count?: number;
+          id?: string;
+          match_key?: string;
+          spotify_track_id?: string | null;
+          title?: string;
+          updated_at?: string;
+          youtube_video_id?: string;
+        };
+        Relationships: [];
+      };
       user_roles: {
         Row: {
           created_at: string;
@@ -270,6 +306,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      bump_track_match: {
+        Args: { _id: string };
+        Returns: undefined;
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];

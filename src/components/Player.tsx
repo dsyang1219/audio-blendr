@@ -103,18 +103,21 @@ export function Player() {
         current.sourceTable ?? (current.spotify_track_id ? "liked_tracks" : "playlist_tracks");
       const fallbackTable = preferredTable === "liked_tracks" ? "playlist_tracks" : "liked_tracks";
 
-      // Race both tables: findTrackRow already falls back to a (title, artist)
-      // match, so this minimises first-play latency.
+      // Try the table the track came from first and only then the other one.
+      // Sequential on purpose: a song saved in both Liked Songs and a playlist
+      // would otherwise spend two 100-unit YouTube searches in parallel.
       const lookupOne = (table: typeof preferredTable) =>
         resolveYT({
           data: { table, trackId: current.id, title: current.title, artist: current.artist },
         }).catch(() => ({ videoId: null as string | null, quotaHit: false }));
 
       try {
-        const [preferred, fallback] = await Promise.all([
-          lookupOne(preferredTable),
-          lookupOne(fallbackTable),
-        ]);
+        const preferred = await lookupOne(preferredTable);
+        if (cancelled) return;
+        const fallback =
+          preferred.videoId || preferred.quotaHit
+            ? { videoId: null as string | null, quotaHit: false }
+            : await lookupOne(fallbackTable);
         if (cancelled) return;
         const found = preferred.videoId ?? fallback.videoId ?? null;
         if (found) {
