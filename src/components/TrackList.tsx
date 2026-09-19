@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Play, Music, Youtube, Check, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { Play, Youtube, Check, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { Artwork } from "@/components/Artwork";
 import { usePlayer, type Track } from "@/lib/player-context";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -152,13 +153,7 @@ export function TrackList({
               </span>
               <div className="flex min-w-0 items-center gap-3">
                 <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-muted shadow-elegant">
-                  {t.album_art_url ? (
-                    <img src={t.album_art_url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-secondary">
-                      <Music className="h-4 w-4 text-secondary-foreground" />
-                    </div>
-                  )}
+                  <Artwork src={t.album_art_url} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">

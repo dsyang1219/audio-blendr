@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Music, Plus, Upload, X, Play, Search, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Artwork } from "@/components/Artwork";
 import {
   Dialog,
   DialogContent,
@@ -363,17 +364,12 @@ function SortablePlaylistCard({ playlist }: { playlist: PL }) {
         className="group hover-lift glass relative block rounded-2xl p-4 animate-scale-in"
       >
         <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-muted shadow-elegant">
-          {playlist.cover_url ? (
-            <img
-              src={playlist.cover_url}
-              alt={playlist.name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-secondary">
-              <Music className="h-12 w-12 text-secondary-foreground" />
-            </div>
-          )}
+          <Artwork
+            src={playlist.cover_url}
+            alt={playlist.name}
+            className="transition-transform duration-500 group-hover:scale-110"
+            iconClassName="max-h-12 max-w-12"
+          />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           <div className="absolute bottom-2 right-2 flex h-11 w-11 translate-y-2 items-center justify-center rounded-full bg-foreground text-background opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
             <Play className="h-5 w-5 fill-current" />

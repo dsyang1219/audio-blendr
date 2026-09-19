@@ -2,11 +2,11 @@
 @source "../src";
 @import "tw-animate-css";
 
-/* Brand typography:
+/* Brand typography (loaded via <link> in routes/__root.tsx — a CSS @import
+   here would be dropped because it must precede every other statement):
    - Space Grotesk → display / wordmark (geometric, friendly, distinctive)
    - Inter         → body UI (highly legible)
    - JetBrains Mono → numeric / technical accents (timestamps, counts) */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
