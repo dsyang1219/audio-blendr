@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import YouTube from "react-youtube";
 import type { YouTubePlayer } from "react-youtube";
 import {
@@ -25,11 +25,13 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { cn } from "@/lib/utils";
 
 const SEEK_STEP_SECONDS = 10;
+const PROGRESS_POLL_MS = 250;
+const AUTOPLAY_CHECK_MS = 900;
 
 // YT.PlayerState values
 const YT_ENDED = 0;
-const YT_UNSTARTED = -1;
-const YT_CUED = 5;
+const YT_PLAYING = 1;
+const YT_BUFFERING = 3;
 
 const YT_ERROR_MESSAGES: Record<number, string> = {
   2: "Invalid video",
@@ -52,6 +54,87 @@ function isTypingTarget(el: EventTarget | null) {
   return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
 }
 
+function safeCall<T>(fn: () => T): T | undefined {
+  try {
+    return fn();
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Seek bar with elapsed / total time. Owns its own polling so the progress
+ * tick re-renders only this small component, never the whole footer. Polling
+ * starts when the player reports ready — not when the video ID changes, which
+ * happens before the player exists.
+ */
+function PlaybackProgress({
+  playerRef,
+  ready,
+  className,
+}: {
+  playerRef: RefObject<YouTubePlayer | null>;
+  ready: boolean;
+  className?: string;
+}) {
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [seeking, setSeeking] = useState(false);
+
+  useEffect(() => {
+    if (!ready) {
+      setProgress(0);
+      setDuration(0);
+      return;
+    }
+    const id = setInterval(() => {
+      if (seeking) return;
+      const p = safeCall(() => playerRef.current?.getCurrentTime?.()) ?? 0;
+      const d = safeCall(() => playerRef.current?.getDuration?.()) ?? 0;
+      setProgress(p);
+      setDuration(d);
+      if (d > 0 && "mediaSession" in navigator) {
+        safeCall(() =>
+          navigator.mediaSession.setPositionState?.({
+            duration: d,
+            playbackRate: 1,
+            position: Math.min(p, d),
+          }),
+        );
+      }
+    }, PROGRESS_POLL_MS);
+    return () => clearInterval(id);
+  }, [playerRef, ready, seeking]);
+
+  return (
+    <div className={cn("flex w-full items-center gap-2 text-xs text-muted-foreground", className)}>
+      <span className="w-9 text-right font-mono tabular-nums">{fmt(progress)}</span>
+      <Slider
+        value={[duration ? (progress / duration) * 100 : 0]}
+        onValueChange={(v) => {
+          if (!duration) return;
+          setSeeking(true);
+          setProgress((v[0] / 100) * duration);
+        }}
+        onValueCommit={(v) => {
+          if (duration) {
+            const t = (v[0] / 100) * duration;
+            safeCall(() => playerRef.current?.seekTo(t, true));
+            setProgress(t);
+          }
+          setTimeout(() => setSeeking(false), 250);
+        }}
+        max={100}
+        step={0.5}
+        disabled={!duration}
+        aria-label="Seek"
+        className="flex-1"
+      />
+      <span className="w-9 font-mono tabular-nums">{fmt(duration)}</span>
+    </div>
+  );
+}
+
 export function Player() {
   const {
     current,
@@ -72,10 +155,8 @@ export function Player() {
   } = usePlayer();
 
   const [videoId, setVideoId] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
   const [resolving, setResolving] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [seeking, setSeeking] = useState(false);
   const [muted, setMuted] = useState(false);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const prefetchedRef = useRef<Set<string>>(new Set());
@@ -83,7 +164,17 @@ export function Player() {
 
   const effectiveVolume = muted ? 0 : volume;
 
+  // Latest values readable from stable callbacks and timers.
+  const isPlayingRef = useRef(isPlaying);
+  const repeatRef = useRef(repeat);
+  isPlayingRef.current = isPlaying;
+  repeatRef.current = repeat;
+
   // ---- Resolve the YouTube video for the current track --------------------
+  // The <YouTube> element stays mounted across tracks: swapping the videoId
+  // prop loads the next video into the SAME iframe. Tearing it down per track
+  // would discard the playback permission the user's tap granted (mobile
+  // browsers only allow audio after a gesture), forcing a tap on every song.
   useEffect(() => {
     if (!current) {
       setVideoId(null);
@@ -94,16 +185,16 @@ export function Player() {
       return;
     }
 
+    // Don't let the previous track keep playing while we look this one up.
+    safeCall(() => playerRef.current?.pauseVideo());
+
     let cancelled = false;
     const lookup = async () => {
       setResolving(true);
-      setVideoId(null);
-
       const preferredTable =
         current.sourceTable ?? (current.spotify_track_id ? "liked_tracks" : "playlist_tracks");
       const fallbackTable = preferredTable === "liked_tracks" ? "playlist_tracks" : "liked_tracks";
 
-      // Try the table the track came from first and only then the other one.
       // Sequential on purpose: a song saved in both Liked Songs and a playlist
       // would otherwise spend two 100-unit YouTube searches in parallel.
       const lookupOne = (table: typeof preferredTable) =>
@@ -123,12 +214,15 @@ export function Player() {
         if (found) {
           setVideoId(found);
           setTrackVideoId(current.id, found);
-        } else if (preferred.quotaHit || fallback.quotaHit) {
-          toast.error("YouTube daily search quota reached — try again after midnight Pacific", {
-            id: "yt-quota",
-          });
         } else {
-          toast.error(`Couldn't find "${current.title}" on YouTube`);
+          setVideoId(null);
+          if (preferred.quotaHit || fallback.quotaHit) {
+            toast.error("YouTube daily search quota reached — try again after midnight Pacific", {
+              id: "yt-quota",
+            });
+          } else {
+            toast.error(`Couldn't find "${current.title}" on YouTube`);
+          }
         }
       } finally {
         if (!cancelled) setResolving(false);
@@ -156,62 +250,42 @@ export function Player() {
 
   // ---- Playback plumbing ---------------------------------------------------
   useEffect(() => {
-    if (!playerRef.current) return;
-    const id = setInterval(() => {
-      if (seeking) return;
-      try {
-        const p = playerRef.current?.getCurrentTime?.() ?? 0;
-        const d = playerRef.current?.getDuration?.() ?? 0;
-        setProgress(p);
-        setDuration(d);
-        if (d > 0 && "mediaSession" in navigator) {
-          navigator.mediaSession.setPositionState?.({
-            duration: d,
-            playbackRate: 1,
-            position: Math.min(p, d),
-          });
-        }
-      } catch {
-        /* player not ready */
-      }
-    }, 500);
-    return () => clearInterval(id);
-  }, [videoId, seeking]);
+    if (!ready) return;
+    safeCall(() => (isPlaying ? playerRef.current?.playVideo() : playerRef.current?.pauseVideo()));
+  }, [isPlaying, ready]);
 
   useEffect(() => {
-    try {
-      if (isPlaying) playerRef.current?.playVideo();
-      else playerRef.current?.pauseVideo();
-    } catch {
-      /* player not ready */
-    }
-  }, [isPlaying]);
-
-  useEffect(() => {
-    try {
-      playerRef.current?.setVolume?.(effectiveVolume);
-    } catch {
-      /* player not ready */
-    }
+    safeCall(() => playerRef.current?.setVolume?.(effectiveVolume));
   }, [effectiveVolume]);
 
-  const seekTo = useCallback(
-    (seconds: number) => {
-      if (!playerRef.current || !duration) return;
-      const t = Math.min(Math.max(seconds, 0), duration);
-      try {
-        playerRef.current.seekTo(t, true);
-      } catch {
-        /* player not ready */
-      }
-      setProgress(t);
+  const seekTo = useCallback((seconds: number) => {
+    const d = safeCall(() => playerRef.current?.getDuration?.()) ?? 0;
+    if (!d) return;
+    safeCall(() => playerRef.current?.seekTo(Math.min(Math.max(seconds, 0), d), true));
+  }, []);
+
+  const seekBy = useCallback(
+    (delta: number) => {
+      const p = safeCall(() => playerRef.current?.getCurrentTime?.()) ?? 0;
+      seekTo(p + delta);
     },
-    [duration],
+    [seekTo],
   );
 
-  const seekBy = useCallback((delta: number) => seekTo(progress + delta), [seekTo, progress]);
-
   const toggleMute = useCallback(() => setMuted((m) => !m), []);
+
+  // If the browser refused to auto-play (typical on iOS when the video loads
+  // after the user's tap), stop claiming we're playing so the big Play button
+  // is offered — one tap, which is a gesture, then starts audio.
+  const checkAutoplay = useCallback(() => {
+    setTimeout(() => {
+      if (!isPlayingRef.current) return;
+      const state = safeCall(() => playerRef.current?.getPlayerState?.());
+      if (state !== undefined && state !== YT_PLAYING && state !== YT_BUFFERING) {
+        setIsPlaying(false);
+      }
+    }, AUTOPLAY_CHECK_MS);
+  }, [setIsPlaying]);
 
   // ---- Media Session: lock screen / headphone / OS media keys --------------
   useEffect(() => {
@@ -247,21 +321,9 @@ export function Player() {
       ["seekforward", (d) => seekBy(d.seekOffset ?? SEEK_STEP_SECONDS)],
       ["seekto", (d) => typeof d.seekTime === "number" && seekTo(d.seekTime)],
     ];
-    for (const [action, handler] of handlers) {
-      try {
-        ms.setActionHandler(action, handler);
-      } catch {
-        /* action unsupported in this browser */
-      }
-    }
+    for (const [action, handler] of handlers) safeCall(() => ms.setActionHandler(action, handler));
     return () => {
-      for (const [action] of handlers) {
-        try {
-          ms.setActionHandler(action, null);
-        } catch {
-          /* ignore */
-        }
-      }
+      for (const [action] of handlers) safeCall(() => ms.setActionHandler(action, null));
     };
   }, [setIsPlaying, playPrev, playNext, seekBy, seekTo]);
 
@@ -305,30 +367,6 @@ export function Player() {
   }, [current, togglePlay, playNext, playPrev, seekBy, toggleMute, toggleShuffle, cycleRepeat]);
 
   // ---- Shared UI pieces ----------------------------------------------------
-  const progressBar = (
-    <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
-      <span className="w-9 text-right font-mono tabular-nums">{fmt(progress)}</span>
-      <Slider
-        value={[duration ? (progress / duration) * 100 : 0]}
-        onValueChange={(v) => {
-          if (!duration) return;
-          setSeeking(true);
-          setProgress((v[0] / 100) * duration);
-        }}
-        onValueCommit={(v) => {
-          if (duration) seekTo((v[0] / 100) * duration);
-          setTimeout(() => setSeeking(false), 250);
-        }}
-        max={100}
-        step={0.5}
-        disabled={!duration}
-        aria-label="Seek"
-        className="flex-1"
-      />
-      <span className="w-9 font-mono tabular-nums">{fmt(duration)}</span>
-    </div>
-  );
-
   const repeatButton = (size: "sm" | "lg") => (
     <button
       type="button"
@@ -370,7 +408,7 @@ export function Player() {
       onClick={togglePlay}
       disabled={!current}
       className={cn(
-        "flex items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-all active:scale-95 disabled:opacity-40",
+        "flex items-center justify-center rounded-full bg-foreground text-background shadow-glow transition-transform active:scale-95 disabled:opacity-40",
         size === "lg" ? "h-16 w-16" : "h-10 w-10 hover:scale-110 disabled:hover:scale-100",
         isPlaying && "animate-pulse-glow",
       )}
@@ -388,7 +426,7 @@ export function Player() {
   const VolumeIcon = muted || effectiveVolume === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
 
   return (
-    <footer className="border-t border-border bg-sidebar/90 px-3 py-2.5 shadow-elegant backdrop-blur-xl sm:px-4 sm:py-3">
+    <footer className="border-t border-border bg-sidebar/95 px-3 py-2.5 shadow-elegant sm:px-4 sm:py-3 md:bg-sidebar/90 md:backdrop-blur-xl">
       <div className="grid grid-cols-[1fr_auto] items-center gap-3 md:grid-cols-3 md:gap-4">
         {/* Left: now playing. On mobile this opens the full-screen sheet. */}
         <Sheet>
@@ -412,7 +450,9 @@ export function Player() {
                   {current?.title ?? "Nothing playing"}
                 </div>
                 <div className="truncate text-[11px] text-muted-foreground sm:text-xs">
-                  {current?.artist ?? "Pick a song from your library"}
+                  {resolving
+                    ? "Finding on YouTube…"
+                    : (current?.artist ?? "Pick a song from your library")}
                 </div>
                 {current?.album && (
                   <div className="hidden truncate text-[11px] text-muted-foreground/70 sm:block">
@@ -449,7 +489,7 @@ export function Player() {
                   </div>
                 )}
               </div>
-              {progressBar}
+              <PlaybackProgress playerRef={playerRef} ready={ready} />
               <div className="mt-8 flex items-center justify-center gap-8">
                 {shuffleButton("lg")}
                 <button
@@ -525,7 +565,11 @@ export function Player() {
             </button>
             {repeatButton("sm")}
           </div>
-          <div className="hidden w-full max-w-md md:block">{progressBar}</div>
+          <PlaybackProgress
+            playerRef={playerRef}
+            ready={ready}
+            className="hidden max-w-md md:flex"
+          />
         </div>
 
         {/* Right: queue + volume (desktop); compact play button (mobile) */}
@@ -565,9 +609,10 @@ export function Player() {
       </div>
 
       {/* Mobile progress strip */}
-      <div className="mt-2 md:hidden">{progressBar}</div>
+      <PlaybackProgress playerRef={playerRef} ready={ready} className="mt-2 md:hidden" />
 
-      {/* Hidden YouTube player — the audio source */}
+      {/* Hidden YouTube player — the audio source. Mounted once while a track
+          is selected; track changes swap the videoId into the same iframe. */}
       <div className="sr-only h-0 w-0 overflow-hidden" aria-hidden>
         {videoId && (
           <YouTube
@@ -579,36 +624,24 @@ export function Player() {
             }}
             onReady={(e) => {
               playerRef.current = e.target;
-              try {
-                e.target.setVolume(effectiveVolume);
-                e.target.playVideo();
-              } catch {
-                /* ignore */
-              }
-              setIsPlaying(true);
+              safeCall(() => e.target.setVolume(effectiveVolume));
+              if (isPlayingRef.current) safeCall(() => e.target.playVideo());
+              setReady(true);
+              checkAutoplay();
             }}
             onStateChange={(e) => {
               const state = (e as unknown as { data: number }).data;
-              if (state === YT_CUED || state === YT_UNSTARTED) {
-                try {
-                  e.target.playVideo();
-                } catch {
-                  /* ignore */
-                }
-              }
-              if (state === YT_ENDED && repeat === "one") {
-                try {
+              if (state === YT_ENDED && repeatRef.current === "one") {
+                safeCall(() => {
                   e.target.seekTo(0, true);
                   e.target.playVideo();
-                } catch {
-                  /* ignore */
-                }
+                });
               }
             }}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
             onEnd={() => {
-              if (repeat !== "one") playNext(true);
+              if (repeatRef.current !== "one") playNext(true);
             }}
             onError={(e) => {
               const code = (e as unknown as { data?: number }).data;
@@ -622,12 +655,6 @@ export function Player() {
           />
         )}
       </div>
-
-      {resolving && (
-        <p className="mt-1 text-center text-xs text-muted-foreground">
-          Finding "{current?.title}" on YouTube…
-        </p>
-      )}
     </footer>
   );
 }

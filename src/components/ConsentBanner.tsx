@@ -40,7 +40,7 @@ export function ConsentBanner() {
     <div
       role="region"
       aria-label="Cookie and storage notice"
-      className="fixed inset-x-0 bottom-0 z-50 p-4 md:p-6"
+      className="fixed inset-x-0 top-16 z-50 p-4 md:bottom-0 md:top-auto md:p-6"
     >
       <div className="glass mx-auto flex max-w-3xl flex-col gap-4 rounded-2xl p-5 shadow-elegant md:flex-row md:items-center">
         <p className="flex-1 text-sm text-muted-foreground">

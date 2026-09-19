@@ -362,3 +362,35 @@
   padding: 0.1em 0.35em;
   border-radius: 0.25rem;
 }
+
+/* ----- Mobile performance -----
+   backdrop-filter, fixed backgrounds and box-shadow animations are expensive on
+   phone GPUs and are the usual cause of stuttering scroll. Phones get flat,
+   opaque surfaces and no ambient animation; desktops keep the full treatment. */
+@media (max-width: 767px) {
+  body {
+    background-attachment: scroll;
+  }
+  .glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background-color: color-mix(in oklab, var(--card) 94%, transparent);
+  }
+  .animate-float,
+  .animate-pulse-glow {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-pulse-glow,
+  .animate-fade-in,
+  .animate-scale-in {
+    animation: none;
+  }
+  .hover-lift,
+  .hover-lift:hover {
+    transform: none;
+  }
+}
