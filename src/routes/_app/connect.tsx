@@ -20,7 +20,9 @@ export const Route = createFileRoute("/_app/connect")({
 });
 
 function ConnectPage() {
-  const [status, setStatus] = useState<{ connected: boolean; displayName: string | null } | null>(null);
+  const [status, setStatus] = useState<{ connected: boolean; displayName: string | null } | null>(
+    null,
+  );
   const [busy, setBusy] = useState<string | null>(null);
   const [ytUrl, setYtUrl] = useState("");
   const [ytPlaylistUrl, setYtPlaylistUrl] = useState("");
@@ -35,7 +37,9 @@ function ConnectPage() {
   const addVideoFn = useServerFn(addYouTubeVideo);
 
   useEffect(() => {
-    getStatusFn().then(setStatus).catch(() => setStatus({ connected: false, displayName: null }));
+    getStatusFn()
+      .then(setStatus)
+      .catch(() => setStatus({ connected: false, displayName: null }));
   }, [getStatusFn]);
 
   const openSpotifyAuth = (url: string) => {
@@ -126,7 +130,9 @@ function ConnectPage() {
     if (!ytPlaylistUrl.trim()) return;
     setBusy("ytplaylist");
     try {
-      const r = await importPlaylistFn({ data: { url: ytPlaylistUrl, name: ytPlaylistName || undefined } });
+      const r = await importPlaylistFn({
+        data: { url: ytPlaylistUrl, name: ytPlaylistName || undefined },
+      });
       toast.success(`Imported "${r.name}" with ${r.tracks} tracks`);
       setYtPlaylistUrl("");
       setYtPlaylistName("");
@@ -140,7 +146,9 @@ function ConnectPage() {
     <div className="space-y-6 p-8 animate-fade-in">
       <div>
         <h1 className="text-4xl font-bold tracking-tight">Sync sources</h1>
-        <p className="mt-1 text-muted-foreground">Connect Spotify and add YouTube tracks to build your unified library.</p>
+        <p className="mt-1 text-muted-foreground">
+          Connect Spotify and add YouTube tracks to build your unified library.
+        </p>
       </div>
 
       <Card className="glass border-border/60 hover-lift">
@@ -162,7 +170,11 @@ function ConnectPage() {
             <p className="text-sm text-muted-foreground">Checking…</p>
           ) : !status.connected ? (
             <Button onClick={connect} disabled={busy === "connect"}>
-              {busy === "connect" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plug className="mr-2 h-4 w-4" />}
+              {busy === "connect" ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Plug className="mr-2 h-4 w-4" />
+              )}
               Connect Spotify
             </Button>
           ) : (
@@ -216,7 +228,9 @@ function ConnectPage() {
             </div>
             Import a YouTube playlist
           </CardTitle>
-          <CardDescription>Paste a YouTube playlist URL to import it as an Audio Blendr playlist.</CardDescription>
+          <CardDescription>
+            Paste a YouTube playlist URL to import it as an Audio Blendr playlist.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Input
@@ -230,7 +244,10 @@ function ConnectPage() {
               value={ytPlaylistUrl}
               onChange={(e) => setYtPlaylistUrl(e.target.value)}
             />
-            <Button onClick={importPlaylist} disabled={busy === "ytplaylist" || !ytPlaylistUrl.trim()}>
+            <Button
+              onClick={importPlaylist}
+              disabled={busy === "ytplaylist" || !ytPlaylistUrl.trim()}
+            >
               {busy === "ytplaylist" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Import
             </Button>
@@ -239,7 +256,11 @@ function ConnectPage() {
       </Card>
 
       <div className="text-sm text-muted-foreground">
-        Once synced, head to <Link to="/library" className="text-primary underline">your library</Link>.
+        Once synced, head to{" "}
+        <Link to="/library" className="text-primary underline">
+          your library
+        </Link>
+        .
       </div>
     </div>
   );

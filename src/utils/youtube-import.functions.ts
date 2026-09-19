@@ -149,7 +149,10 @@ export const importYouTubePlaylist = createServerFn({ method: "POST" })
       if (plRes.ok) {
         const plJson = (await plRes.json()) as {
           items: {
-            snippet: { title: string; thumbnails: { high?: { url: string }; medium?: { url: string } } };
+            snippet: {
+              title: string;
+              thumbnails: { high?: { url: string }; medium?: { url: string } };
+            };
           }[];
         };
         if (plJson.items[0]) {

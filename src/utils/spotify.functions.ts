@@ -28,7 +28,7 @@ export const getSpotifyAuthUrl = createServerFn({ method: "POST" })
     const clientId = process.env.SPOTIFY_CLIENT_ID;
     if (!clientId) throw new Error("Spotify not configured");
 
-    const state = createSpotifyState(userId, data.origin);
+    const state = await createSpotifyState(userId, data.origin);
     const params = new URLSearchParams({
       client_id: clientId,
       response_type: "code",
@@ -46,7 +46,7 @@ export const completeSpotifyAuth = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const userId = context.userId;
     const supabase = context.supabase;
-    const parsedState = parseSpotifyState(data.state);
+    const parsedState = await parseSpotifyState(data.state);
     if (parsedState.userId !== userId) throw new Error("State mismatch");
 
     const clientId = process.env.SPOTIFY_CLIENT_ID!;
@@ -55,7 +55,7 @@ export const completeSpotifyAuth = createServerFn({ method: "POST" })
     const body = new URLSearchParams({
       grant_type: "authorization_code",
       code: data.code,
-       redirect_uri: getSpotifyRedirectUri(),
+      redirect_uri: getSpotifyRedirectUri(),
     });
 
     const tokenRes = await fetch(SPOTIFY_TOKEN_URL, {
@@ -88,20 +88,18 @@ export const completeSpotifyAuth = createServerFn({ method: "POST" })
 
     const expiresAt = new Date(Date.now() + tok.expires_in * 1000).toISOString();
 
-    const { error } = await supabase
-      .from("spotify_connections")
-      .upsert(
-        {
-          user_id: userId,
-          access_token: tok.access_token,
-          refresh_token: tok.refresh_token,
-          expires_at: expiresAt,
-          scope: tok.scope,
-          spotify_user_id: me?.id ?? null,
-          spotify_display_name: me?.display_name ?? null,
-        },
-        { onConflict: "user_id" }
-      );
+    const { error } = await supabase.from("spotify_connections").upsert(
+      {
+        user_id: userId,
+        access_token: tok.access_token,
+        refresh_token: tok.refresh_token,
+        expires_at: expiresAt,
+        scope: tok.scope,
+        spotify_user_id: me?.id ?? null,
+        spotify_display_name: me?.display_name ?? null,
+      },
+      { onConflict: "user_id" },
+    );
 
     if (error) {
       console.error("Failed to save spotify connection", error);
@@ -113,7 +111,7 @@ export const completeSpotifyAuth = createServerFn({ method: "POST" })
 
 async function refreshSpotifyToken(
   supabase: ReturnType<typeof Object>,
-  userId: string
+  userId: string,
 ): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb: any = supabase;
@@ -150,7 +148,11 @@ async function refreshSpotifyToken(
     throw new Error("Spotify session expired — please reconnect");
   }
 
-  const tok = (await res.json()) as { access_token: string; expires_in: number; refresh_token?: string };
+  const tok = (await res.json()) as {
+    access_token: string;
+    expires_in: number;
+    refresh_token?: string;
+  };
   const expiresAt = new Date(Date.now() + tok.expires_in * 1000).toISOString();
   await sb
     .from("spotify_connections")
@@ -252,12 +254,17 @@ export const syncLikedSongs = createServerFn({ method: "POST" })
     let url: string | null = `${SPOTIFY_API}/me/tracks?limit=50`;
     let pages = 0;
     while (url && pages < 4) {
-      const res: Response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+      const res: Response = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
       if (!res.ok) {
         console.error("Spotify liked failed", res.status, await res.text());
         throw new Error("Failed to fetch liked songs");
       }
-      const json = (await res.json()) as { items: { track: SpotifyTrackObj }[]; next: string | null };
+      const json = (await res.json()) as {
+        items: { track: SpotifyTrackObj }[];
+        next: string | null;
+      };
       for (const it of json.items) if (it.track) tracks.push(mapTrack(it.track));
       url = json.next;
       pages++;
@@ -369,23 +376,44 @@ async function fetchAllPlaylistTracks(
   spotifyPlaylistId: string,
   accessToken: string,
   userId: string,
-): Promise<{ rows: Array<ReturnType<typeof mapTrack> & { user_id: string; position: number; source: "spotify" }> | null; status: number }> {
-  const rows: Array<ReturnType<typeof mapTrack> & { user_id: string; position: number; source: "spotify" }> = [];
-  let url: string | null = `${SPOTIFY_API}/playlists/${spotifyPlaylistId}/tracks?limit=100&fields=${encodeURIComponent(TRACK_FIELDS)}`;
+): Promise<{
+  rows: Array<
+    ReturnType<typeof mapTrack> & { user_id: string; position: number; source: "spotify" }
+  > | null;
+  status: number;
+}> {
+  const rows: Array<
+    ReturnType<typeof mapTrack> & { user_id: string; position: number; source: "spotify" }
+  > = [];
+  let url: string | null =
+    `${SPOTIFY_API}/playlists/${spotifyPlaylistId}/tracks?limit=100&fields=${encodeURIComponent(TRACK_FIELDS)}`;
   let position = 0;
   let pageCount = 0;
 
   while (url && pageCount < 10) {
     const res: Response = await spotifyFetch(url, accessToken);
     if (!res.ok) {
-      console.error("Fetch playlist tracks failed", spotifyPlaylistId, res.status, await res.text());
+      console.error(
+        "Fetch playlist tracks failed",
+        spotifyPlaylistId,
+        res.status,
+        await res.text(),
+      );
       return { rows: null, status: res.status };
     }
 
-    const json = (await res.json()) as { items: { track: SpotifyTrackObj | null }[]; next: string | null };
+    const json = (await res.json()) as {
+      items: { track: SpotifyTrackObj | null }[];
+      next: string | null;
+    };
     for (const it of json.items) {
       if (!it.track) continue;
-      rows.push({ ...mapTrack(it.track), user_id: userId, position: position++, source: "spotify" as const });
+      rows.push({
+        ...mapTrack(it.track),
+        user_id: userId,
+        position: position++,
+        source: "spotify" as const,
+      });
     }
 
     url = json.next;
@@ -409,14 +437,25 @@ export const syncPlaylists = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .eq("source", "spotify")
       .not("spotify_playlist_id", "is", null);
-    const alreadySynced = new Set((existing ?? []).map((p) => p.spotify_playlist_id).filter(Boolean));
+    const alreadySynced = new Set(
+      (existing ?? []).map((p) => p.spotify_playlist_id).filter(Boolean),
+    );
 
-    const playlists: { id: string; name: string; description: string | null; image: string | null }[] = [];
-    let plUrl: string | null = `${SPOTIFY_API}/me/playlists?limit=50&fields=${encodeURIComponent(PLAYLIST_LIST_FIELDS)}`;
+    const playlists: {
+      id: string;
+      name: string;
+      description: string | null;
+      image: string | null;
+    }[] = [];
+    let plUrl: string | null =
+      `${SPOTIFY_API}/me/playlists?limit=50&fields=${encodeURIComponent(PLAYLIST_LIST_FIELDS)}`;
     let pageCount = 0;
     let partialReason: string | null = null;
     while (plUrl && pageCount < 20) {
-      const res: Response = await spotifyFetch(plUrl, accessToken, { maxRetries: 2, maxWaitMs: 5_000 });
+      const res: Response = await spotifyFetch(plUrl, accessToken, {
+        maxRetries: 2,
+        maxWaitMs: 5_000,
+      });
       if (!res.ok) {
         const errText = await res.text();
         console.error("Spotify /me/playlists failed", res.status, errText);
@@ -425,17 +464,30 @@ export const syncPlaylists = createServerFn({ method: "POST" })
             throw new Error("Spotify session expired — please reconnect on the Connect page");
           }
           if (res.status === 429) {
-            return { playlists: 0, tracks: 0, skipped: 0, partial: true, message: "Spotify is rate-limiting requests right now — please wait a few minutes and try again." };
+            return {
+              playlists: 0,
+              tracks: 0,
+              skipped: 0,
+              partial: true,
+              message:
+                "Spotify is rate-limiting requests right now — please wait a few minutes and try again.",
+            };
           }
           throw new Error(`Spotify returned ${res.status} when fetching your playlists`);
         }
-        partialReason = res.status === 429
-          ? "Spotify rate-limited some playlist pages, so only part of your library was listed."
-          : `Spotify stopped returning playlist pages (${res.status}).`;
+        partialReason =
+          res.status === 429
+            ? "Spotify rate-limited some playlist pages, so only part of your library was listed."
+            : `Spotify stopped returning playlist pages (${res.status}).`;
         break;
       }
       const json = (await res.json()) as {
-        items: { id: string; name: string; description: string | null; images: { url: string }[] }[];
+        items: {
+          id: string;
+          name: string;
+          description: string | null;
+          images: { url: string }[];
+        }[];
         next: string | null;
       };
       for (const p of json.items) {
@@ -510,12 +562,19 @@ export const syncSinglePlaylist = createServerFn({ method: "POST" })
     // Spotify's /playlists/{id}/tracks endpoint is currently returning 403 for
     // normal user playlists on this app, while the parent playlist endpoint
     // still exposes the same items payload. Use that as the primary path here.
-    const playlistRes = await spotifyFetch(`${SPOTIFY_API}/playlists/${pl.spotify_playlist_id}`, accessToken, {
-      maxRetries: 2,
-      maxWaitMs: 5_000,
-    });
+    const playlistRes = await spotifyFetch(
+      `${SPOTIFY_API}/playlists/${pl.spotify_playlist_id}`,
+      accessToken,
+      {
+        maxRetries: 2,
+        maxWaitMs: 5_000,
+      },
+    );
     if (!playlistRes.ok) {
-      if (playlistRes.status === 429) throw new Error("Spotify is rate-limiting right now — please wait a few minutes and try again");
+      if (playlistRes.status === 429)
+        throw new Error(
+          "Spotify is rate-limiting right now — please wait a few minutes and try again",
+        );
       if (playlistRes.status === 403) throw new Error("Spotify denied access to this playlist");
       throw new Error(`Spotify returned ${playlistRes.status} when fetching this playlist`);
     }
@@ -529,7 +588,9 @@ export const syncSinglePlaylist = createServerFn({ method: "POST" })
             }[];
           };
     };
-    const playlistItems = (Array.isArray(json.items) ? json.items : (json.items?.items ?? [])) as Array<{
+    const playlistItems = (
+      Array.isArray(json.items) ? json.items : (json.items?.items ?? [])
+    ) as Array<{
       item?: { id: string; name: string; artists: { name: string }[] } | null;
       track?: { id: string; name: string; artists: { name: string }[] } | null;
     }>;

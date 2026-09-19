@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/Logo";
+import { Link as RouterLink } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -18,7 +19,7 @@ function AuthPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/library" });
+    if (!loading && user) navigate({ to: "/home" });
   }, [user, loading, navigate]);
 
   return (
@@ -35,10 +36,26 @@ function AuthPage() {
               <TabsTrigger value="signin">Sign in</TabsTrigger>
               <TabsTrigger value="signup">Sign up</TabsTrigger>
             </TabsList>
-            <TabsContent value="signin"><SignInForm /></TabsContent>
-            <TabsContent value="signup"><SignUpForm /></TabsContent>
+            <TabsContent value="signin">
+              <SignInForm />
+            </TabsContent>
+            <TabsContent value="signup">
+              <SignUpForm />
+            </TabsContent>
           </Tabs>
         </div>
+
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          By continuing you agree to our{" "}
+          <RouterLink to="/terms" className="underline underline-offset-4 hover:text-foreground">
+            Terms
+          </RouterLink>{" "}
+          and{" "}
+          <RouterLink to="/privacy" className="underline underline-offset-4 hover:text-foreground">
+            Privacy Policy
+          </RouterLink>
+          .
+        </p>
       </div>
     </div>
   );
@@ -66,7 +83,7 @@ function SignInForm() {
       }
 
       toast.success("Welcome back!");
-      navigate({ to: "/library" });
+      navigate({ to: "/home" });
     } finally {
       setBusy(false);
     }
@@ -76,13 +93,27 @@ function SignInForm() {
     <form onSubmit={handle} className="mt-4 space-y-4">
       <div>
         <Label htmlFor="si-email">Email</Label>
-        <Input id="si-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input
+          id="si-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
       </div>
       <div>
         <Label htmlFor="si-pw">Password</Label>
-        <Input id="si-pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Input
+          id="si-pw"
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
       </div>
-      <Button type="submit" className="w-full" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</Button>
+      <Button type="submit" className="w-full" disabled={busy}>
+        {busy ? "Signing in…" : "Sign in"}
+      </Button>
     </form>
   );
 }
@@ -100,7 +131,7 @@ function SignUpForm() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/library`,
+        emailRedirectTo: `${window.location.origin}/home`,
         data: { display_name: name },
       },
     });
@@ -117,13 +148,28 @@ function SignUpForm() {
       </div>
       <div>
         <Label htmlFor="su-email">Email</Label>
-        <Input id="su-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input
+          id="su-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
       </div>
       <div>
         <Label htmlFor="su-pw">Password</Label>
-        <Input id="su-pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Input
+          id="su-pw"
+          type="password"
+          required
+          minLength={6}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
       </div>
-      <Button type="submit" className="w-full" disabled={busy}>{busy ? "Creating…" : "Create account"}</Button>
+      <Button type="submit" className="w-full" disabled={busy}>
+        {busy ? "Creating…" : "Create account"}
+      </Button>
     </form>
   );
 }
