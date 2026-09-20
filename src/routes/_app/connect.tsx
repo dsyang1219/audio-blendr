@@ -12,7 +12,7 @@ import { importYouTubePlaylist, addYouTubeVideo } from "@/utils/youtube-import.f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Music, Youtube, Loader2, Plug, Unplug } from "lucide-react";
+import { Link2, ListMusic, Loader2, Music, Plug, Unplug } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/connect")({
@@ -20,7 +20,9 @@ export const Route = createFileRoute("/_app/connect")({
 });
 
 function ConnectPage() {
-  const [status, setStatus] = useState<{ connected: boolean; displayName: string | null } | null>(null);
+  const [status, setStatus] = useState<{ connected: boolean; displayName: string | null } | null>(
+    null,
+  );
   const [busy, setBusy] = useState<string | null>(null);
   const [ytUrl, setYtUrl] = useState("");
   const [ytPlaylistUrl, setYtPlaylistUrl] = useState("");
@@ -35,7 +37,9 @@ function ConnectPage() {
   const addVideoFn = useServerFn(addYouTubeVideo);
 
   useEffect(() => {
-    getStatusFn().then(setStatus).catch(() => setStatus({ connected: false, displayName: null }));
+    getStatusFn()
+      .then(setStatus)
+      .catch(() => setStatus({ connected: false, displayName: null }));
   }, [getStatusFn]);
 
   const openSpotifyAuth = (url: string) => {
@@ -126,7 +130,9 @@ function ConnectPage() {
     if (!ytPlaylistUrl.trim()) return;
     setBusy("ytplaylist");
     try {
-      const r = await importPlaylistFn({ data: { url: ytPlaylistUrl, name: ytPlaylistName || undefined } });
+      const r = await importPlaylistFn({
+        data: { url: ytPlaylistUrl, name: ytPlaylistName || undefined },
+      });
       toast.success(`Imported "${r.name}" with ${r.tracks} tracks`);
       setYtPlaylistUrl("");
       setYtPlaylistName("");
@@ -139,59 +145,25 @@ function ConnectPage() {
   return (
     <div className="space-y-6 p-8 animate-fade-in">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight">Sync sources</h1>
-        <p className="mt-1 text-muted-foreground">Connect Spotify and add YouTube tracks to build your unified library.</p>
+        <h1 className="text-4xl font-bold tracking-tight">Add music</h1>
+        <p className="mt-1 text-muted-foreground">
+          Bring in your Spotify library, or add anything you can find online — unreleased tracks,
+          live versions, remixes, covers.
+        </p>
       </div>
 
       <Card className="glass border-border/60 hover-lift">
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
-              <Music className="h-5 w-5 text-secondary-foreground" />
+              <Link2 className="h-5 w-5 text-secondary-foreground" />
             </div>
-            Spotify
+            Add a song from a link
           </CardTitle>
           <CardDescription>
-            {status?.connected
-              ? `Connected as ${status.displayName ?? "Spotify user"}. Tracks resolve YouTube on first play and cache automatically.`
-              : "Sync your liked songs and playlists from Spotify."}
+            That unreleased demo, live version or remix that isn't on Spotify — paste its YouTube
+            link and it becomes a song in your library.
           </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {!status ? (
-            <p className="text-sm text-muted-foreground">Checking…</p>
-          ) : !status.connected ? (
-            <Button onClick={connect} disabled={busy === "connect"}>
-              {busy === "connect" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plug className="mr-2 h-4 w-4" />}
-              Connect Spotify
-            </Button>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={syncLiked} disabled={!!busy}>
-                {busy === "liked" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sync liked songs
-              </Button>
-              <Button onClick={syncAll} disabled={!!busy} variant="secondary">
-                {busy === "playlists" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sync playlists
-              </Button>
-              <Button onClick={disconnect} disabled={!!busy} variant="ghost">
-                <Unplug className="mr-2 h-4 w-4" /> Disconnect
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="glass border-border/60 hover-lift">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
-              <Youtube className="h-5 w-5 text-secondary-foreground" />
-            </div>
-            Add a YouTube video
-          </CardTitle>
-          <CardDescription>Paste a YouTube link to add it as a liked song.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
@@ -212,11 +184,13 @@ function ConnectPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
-              <Youtube className="h-5 w-5 text-secondary-foreground" />
+              <ListMusic className="h-5 w-5 text-secondary-foreground" />
             </div>
-            Import a YouTube playlist
+            Import a playlist from a link
           </CardTitle>
-          <CardDescription>Paste a YouTube playlist URL to import it as an Audio Blendr playlist.</CardDescription>
+          <CardDescription>
+            Paste a YouTube playlist link and every track in it becomes an Audio Blendr playlist.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Input
@@ -230,7 +204,10 @@ function ConnectPage() {
               value={ytPlaylistUrl}
               onChange={(e) => setYtPlaylistUrl(e.target.value)}
             />
-            <Button onClick={importPlaylist} disabled={busy === "ytplaylist" || !ytPlaylistUrl.trim()}>
+            <Button
+              onClick={importPlaylist}
+              disabled={busy === "ytplaylist" || !ytPlaylistUrl.trim()}
+            >
               {busy === "ytplaylist" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Import
             </Button>
@@ -238,8 +215,56 @@ function ConnectPage() {
         </CardContent>
       </Card>
 
+      <Card className="glass border-border/60 hover-lift">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
+              <Music className="h-5 w-5 text-secondary-foreground" />
+            </div>
+            Spotify
+          </CardTitle>
+          <CardDescription>
+            {status?.connected
+              ? `Connected as ${status.displayName ?? "Spotify user"}. Sync your liked songs and playlists whenever you like.`
+              : "Sync your liked songs and playlists. Spotify limits new apps to a handful of accounts, so this is currently invite-only."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {!status ? (
+            <p className="text-sm text-muted-foreground">Checking…</p>
+          ) : !status.connected ? (
+            <Button onClick={connect} disabled={busy === "connect"}>
+              {busy === "connect" ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Plug className="mr-2 h-4 w-4" />
+              )}
+              Connect Spotify
+            </Button>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={syncLiked} disabled={!!busy}>
+                {busy === "liked" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sync liked songs
+              </Button>
+              <Button onClick={syncAll} disabled={!!busy} variant="secondary">
+                {busy === "playlists" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sync playlists
+              </Button>
+              <Button onClick={disconnect} disabled={!!busy} variant="ghost">
+                <Unplug className="mr-2 h-4 w-4" /> Disconnect
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="text-sm text-muted-foreground">
-        Once synced, head to <Link to="/library" className="text-primary underline">your library</Link>.
+        Once you've added music, head to{" "}
+        <Link to="/library" className="text-primary underline">
+          your library
+        </Link>
+        .
       </div>
     </div>
   );

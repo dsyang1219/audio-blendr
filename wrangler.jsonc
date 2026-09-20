@@ -1,7 +1,13 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
+  "name": "audio-blendr",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
+  // Persist request logs and console output in the Cloudflare dashboard
+  // (Workers & Pages -> audio-blendr -> Logs). Free tier: 200k events/day.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+  },
 }

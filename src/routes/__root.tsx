@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { AuthProvider } from "@/lib/auth-context";
 import { PlayerProvider } from "@/lib/player-context";
 import { Toaster } from "@/components/ui/sonner";
+import { ConsentBanner } from "@/components/ConsentBanner";
 
 import appCss from "../styles.css?url";
 
@@ -11,7 +12,9 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">The page you're looking for doesn't exist.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          The page you're looking for doesn't exist.
+        </p>
         <div className="mt-6">
           <Link
             to="/"
@@ -30,16 +33,37 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Audio Blendr — Spotify library on YouTube" },
-      { name: "description", content: "Sync your Spotify library and play it anywhere via YouTube." },
-      { property: "og:title", content: "Audio Blendr — Spotify library on YouTube" },
-      { property: "og:description", content: "Sync your Spotify library and play it anywhere via YouTube." },
+      { title: "Audio Blendr — Every song you love, in one player" },
+      {
+        name: "description",
+        content:
+          "Blend your Spotify library with the tracks that never made it to streaming — unreleased songs, live versions, remixes — in one playlist, one queue, one player.",
+      },
+      { property: "og:title", content: "Audio Blendr — Every song you love, in one player" },
+      {
+        property: "og:description",
+        content:
+          "Blend your Spotify library with the tracks that never made it to streaming — unreleased songs, live versions, remixes — in one playlist, one queue, one player.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Audio Blendr — Spotify library on YouTube" },
-      { name: "twitter:description", content: "Sync your Spotify library and play it anywhere via YouTube." },
+      { name: "twitter:title", content: "Audio Blendr — Every song you love, in one player" },
+      {
+        name: "twitter:description",
+        content:
+          "Blend your Spotify library with the tracks that never made it to streaming — unreleased songs, live versions, remixes — in one playlist, one queue, one player.",
+      },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
+      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -66,6 +90,7 @@ function RootComponent() {
       <PlayerProvider>
         <Outlet />
         <Toaster />
+        <ConsentBanner />
       </PlayerProvider>
     </AuthProvider>
   );

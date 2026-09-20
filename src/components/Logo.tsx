@@ -75,7 +75,12 @@ export function Logo({
         <LogoMark />
       </div>
       {showWordmark && (
-        <span className={cn("font-display font-bold tracking-tight text-gradient", s.text)}>
+        <span
+          className={cn(
+            "whitespace-nowrap font-display font-bold tracking-tight text-gradient",
+            s.text,
+          )}
+        >
           Audio Blendr
         </span>
       )}

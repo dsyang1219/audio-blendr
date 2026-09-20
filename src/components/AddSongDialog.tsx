@@ -1,10 +1,17 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Music, Plus, Search, Youtube } from "lucide-react";
+import { Link2, Loader2, Music, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
+import { Artwork } from "@/components/Artwork";
 import { useServerFn } from "@tanstack/react-start";
 import { addYouTubeVideo } from "@/utils/youtube-import.functions";
 import { searchSpotifyTracks, addSpotifyTrackToPlaylist } from "@/utils/spotify.functions";
@@ -104,7 +111,7 @@ export function AddSongDialog({ playlistId, onAdded, trigger }: AddSongDialogPro
               <Music className="h-4 w-4" /> Spotify
             </TabsTrigger>
             <TabsTrigger value="youtube" className="gap-2">
-              <Youtube className="h-4 w-4 text-red-500" /> YouTube
+              <Link2 className="h-4 w-4" /> From a link
             </TabsTrigger>
           </TabsList>
 
@@ -119,7 +126,11 @@ export function AddSongDialog({ playlistId, onAdded, trigger }: AddSongDialogPro
                 }}
               />
               <Button onClick={runSearch} disabled={searching || !query.trim()}>
-                {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                {searching ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
               </Button>
             </div>
             <div className="max-h-80 space-y-1 overflow-y-auto">
@@ -134,13 +145,7 @@ export function AddSongDialog({ playlistId, onAdded, trigger }: AddSongDialogPro
                     className="flex items-center gap-3 rounded-md p-2 hover:bg-accent/40"
                   >
                     <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded bg-muted">
-                      {t.album_art_url ? (
-                        <img src={t.album_art_url} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <Music className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      )}
+                      <Artwork src={t.album_art_url} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{t.title}</div>
@@ -167,7 +172,7 @@ export function AddSongDialog({ playlistId, onAdded, trigger }: AddSongDialogPro
           <TabsContent value="youtube" className="space-y-3">
             <div className="flex gap-2">
               <Input
-                placeholder="Paste a YouTube URL"
+                placeholder="Paste a YouTube link"
                 value={ytUrl}
                 onChange={(e) => setYtUrl(e.target.value)}
                 onKeyDown={(e) => {
@@ -180,7 +185,8 @@ export function AddSongDialog({ playlistId, onAdded, trigger }: AddSongDialogPro
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Works with any youtube.com/watch, youtu.be, or shorts URL.
+              Unreleased tracks, live versions, remixes — any youtube.com/watch, youtu.be or shorts
+              link.
             </p>
           </TabsContent>
         </Tabs>
