@@ -217,11 +217,14 @@ export function Player() {
         } else {
           setVideoId(null);
           if (preferred.quotaHit || fallback.quotaHit) {
-            toast.error("YouTube daily search quota reached — try again after midnight Pacific", {
-              id: "yt-quota",
-            });
+            toast.error(
+              "Daily lookup limit reached — new songs can be matched again after midnight Pacific",
+              {
+                id: "yt-quota",
+              },
+            );
           } else {
-            toast.error(`Couldn't find "${current.title}" on YouTube`);
+            toast.error(`Couldn't find a stream for "${current.title}"`);
           }
         }
       } finally {
@@ -451,7 +454,7 @@ export function Player() {
                 </div>
                 <div className="truncate text-[11px] text-muted-foreground sm:text-xs">
                   {resolving
-                    ? "Finding on YouTube…"
+                    ? "Finding a stream…"
                     : (current?.artist ?? "Pick a song from your library")}
                 </div>
                 {current?.album && (

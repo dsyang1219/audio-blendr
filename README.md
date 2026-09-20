@@ -2,9 +2,9 @@
 
 # Audio Blendr
 
-**Your Spotify library, playing on YouTube.**
+**Every song you love — even the ones Spotify doesn't have.**
 
-Connect Spotify, sync your liked songs and playlists, and stream every track through an embedded YouTube player — no Spotify Premium required.
+Unreleased tracks, live versions, remixes, covers: the music that only exists online, in the same playlist as your Spotify library. One queue, one player, no Premium required.
 
 [![CI](https://github.com/dsyang1219/audio-blendr/actions/workflows/ci.yml/badge.svg)](https://github.com/dsyang1219/audio-blendr/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)

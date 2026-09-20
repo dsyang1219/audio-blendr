@@ -128,7 +128,7 @@ function LibraryPage() {
             </div>
             <p className="text-lg font-semibold">No liked songs yet</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Connect Spotify and sync your library, or click "Add song" above.
+              Add a song from a link, or sync your Spotify library.
             </p>
           </div>
         ) : queueTracks.length === 0 ? (

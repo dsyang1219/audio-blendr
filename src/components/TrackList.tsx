@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Play, Youtube, Check, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { Play, Link2, Check, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { Artwork } from "@/components/Artwork";
 import { usePlayer, type Track } from "@/lib/player-context";
 import { cn } from "@/lib/utils";
@@ -238,8 +238,11 @@ function SourceBadge({ track }: { track: Track & { source?: string } }) {
     (track.spotify_track_id ? "spotify" : "youtube");
   if (source === "youtube") {
     return (
-      <span className="inline-flex items-center gap-1 rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">
-        <Youtube className="h-2.5 w-2.5" /> YT
+      <span
+        className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-secondary-foreground"
+        title="Added from a link"
+      >
+        <Link2 className="h-2.5 w-2.5" /> Link
       </span>
     );
   }

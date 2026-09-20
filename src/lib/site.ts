@@ -3,7 +3,7 @@
  * Keep public-facing copy here so it is edited in one place.
  */
 export const SITE_NAME = "Audio Blendr";
-export const SITE_TAGLINE = "Your Spotify library, playing on YouTube.";
+export const SITE_TAGLINE = "Every song you love — even the ones Spotify doesn't have.";
 export const SITE_REPO_URL = "https://github.com/dsyang1219/audio-blendr";
 
 /**

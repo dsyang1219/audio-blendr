@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Heart, History, Library, Play, Plug, Plus } from "lucide-react";
+import { Heart, History, Library, Link2, Play, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { usePlayer, type Track } from "@/lib/player-context";
@@ -107,7 +107,7 @@ function HomePage() {
           {likedCount === null
             ? "Loading your library…"
             : likedCount === 0
-              ? "Your library is empty — connect Spotify or add a song to get started."
+              ? "Your library is empty — add a song from a link or sync Spotify to get started."
               : `${likedCount} liked ${likedCount === 1 ? "song" : "songs"} ready to play.`}
         </p>
       </header>
@@ -129,9 +129,9 @@ function HomePage() {
         />
         <QuickCard
           to="/connect"
-          icon={<Plug className="h-5 w-5" />}
-          title="Sync"
-          subtitle="Spotify & YouTube"
+          icon={<Link2 className="h-5 w-5" />}
+          title="Add music"
+          subtitle="From a link or Spotify"
         />
       </section>
 

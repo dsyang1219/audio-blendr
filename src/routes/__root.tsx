@@ -33,22 +33,25 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Audio Blendr — Spotify library on YouTube" },
+      { title: "Audio Blendr — Every song you love, in one player" },
       {
         name: "description",
-        content: "Sync your Spotify library and play it anywhere via YouTube.",
+        content:
+          "Blend your Spotify library with the tracks that never made it to streaming — unreleased songs, live versions, remixes — in one playlist, one queue, one player.",
       },
-      { property: "og:title", content: "Audio Blendr — Spotify library on YouTube" },
+      { property: "og:title", content: "Audio Blendr — Every song you love, in one player" },
       {
         property: "og:description",
-        content: "Sync your Spotify library and play it anywhere via YouTube.",
+        content:
+          "Blend your Spotify library with the tracks that never made it to streaming — unreleased songs, live versions, remixes — in one playlist, one queue, one player.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Audio Blendr — Spotify library on YouTube" },
+      { name: "twitter:title", content: "Audio Blendr — Every song you love, in one player" },
       {
         name: "twitter:description",
-        content: "Sync your Spotify library and play it anywhere via YouTube.",
+        content:
+          "Blend your Spotify library with the tracks that never made it to streaming — unreleased songs, live versions, remixes — in one playlist, one queue, one player.",
       },
     ],
     links: [

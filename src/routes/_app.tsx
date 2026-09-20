@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Artwork } from "@/components/Artwork";
-import { Heart, Home, Library, LogOut, Plug, Settings, Menu } from "lucide-react";
+import { Heart, Home, Library, LogOut, Plus, Settings, Menu } from "lucide-react";
 import { Player } from "@/components/Player";
 import { Logo } from "@/components/Logo";
 
@@ -65,8 +65,8 @@ function AppLayout() {
         <NavItem to="/playlists" icon={<Library className="h-4 w-4" />}>
           Playlists
         </NavItem>
-        <NavItem to="/connect" icon={<Plug className="h-4 w-4" />}>
-          Sync
+        <NavItem to="/connect" icon={<Plus className="h-4 w-4" />}>
+          Add music
         </NavItem>
         <NavItem to="/settings" icon={<Settings className="h-4 w-4" />}>
           Settings
@@ -81,7 +81,7 @@ function AppLayout() {
           <div className="space-y-0.5 pr-2">
             {playlists.length === 0 && (
               <p className="px-3 text-xs text-muted-foreground">
-                Sync from Spotify to see your playlists here.
+                Your playlists will show up here.
               </p>
             )}
             {playlists.map((p) => (

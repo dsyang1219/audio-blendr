@@ -9,7 +9,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Music, Plus, Search, Youtube } from "lucide-react";
+import { Link2, Loader2, Music, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Artwork } from "@/components/Artwork";
 import { useServerFn } from "@tanstack/react-start";
@@ -111,7 +111,7 @@ export function AddSongDialog({ playlistId, onAdded, trigger }: AddSongDialogPro
               <Music className="h-4 w-4" /> Spotify
             </TabsTrigger>
             <TabsTrigger value="youtube" className="gap-2">
-              <Youtube className="h-4 w-4 text-red-500" /> YouTube
+              <Link2 className="h-4 w-4" /> From a link
             </TabsTrigger>
           </TabsList>
 
@@ -172,7 +172,7 @@ export function AddSongDialog({ playlistId, onAdded, trigger }: AddSongDialogPro
           <TabsContent value="youtube" className="space-y-3">
             <div className="flex gap-2">
               <Input
-                placeholder="Paste a YouTube URL"
+                placeholder="Paste a YouTube link"
                 value={ytUrl}
                 onChange={(e) => setYtUrl(e.target.value)}
                 onKeyDown={(e) => {
@@ -185,7 +185,8 @@ export function AddSongDialog({ playlistId, onAdded, trigger }: AddSongDialogPro
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Works with any youtube.com/watch, youtu.be, or shorts URL.
+              Unreleased tracks, live versions, remixes — any youtube.com/watch, youtu.be or shorts
+              link.
             </p>
           </TabsContent>
         </Tabs>
