@@ -6,6 +6,8 @@
 
 Unreleased tracks, live versions, remixes, covers: the music that only exists online, in the same playlist as your Spotify library. One queue, one player, no Premium required.
 
+I made this because I love Phoebe Bridgers, and I love listening to a lot of unreleased versions of her songs such as "Georgia", the red flannel version. I wanted to be able to integrate these songs more easily into my playlists without having to recreate all my Spotify playlists on Youtube, so I built this.
+
 [![CI](https://github.com/dsyang1219/audio-blendr/actions/workflows/ci.yml/badge.svg)](https://github.com/dsyang1219/audio-blendr/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)
